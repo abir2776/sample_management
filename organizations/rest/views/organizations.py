@@ -1,7 +1,7 @@
 from django.db import transaction
 from rest_framework import status
 from rest_framework.generics import ListCreateAPIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, OR
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -33,7 +33,7 @@ class MyOrganizationListCreate(ListCreateAPIView):
             return [IsAuthenticated()]
 
         if method == "POST":
-            return [IsOwner() | IsAdmin() | IsManager() | IsMerchandiser()]
+            return [OR(IsOwner(), OR(IsAdmin(), OR(IsManager(), IsMerchandiser())))]
 
         return [IsAuthenticated()]
 

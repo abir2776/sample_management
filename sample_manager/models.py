@@ -3,9 +3,10 @@ from simple_history.models import HistoricalRecords
 
 from common.choices import Status
 from common.models import BaseModelWithUID
+from .choices import StorageType
 
 
-class Bucket(BaseModelWithUID):
+class Storage(BaseModelWithUID):
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE
     )
@@ -24,6 +25,10 @@ class Bucket(BaseModelWithUID):
         choices=Status.choices,
         default=Status.ACTIVE,
     )
+    type = models.CharField(
+        max_length=20, choices=StorageType, default=StorageType.SPACE
+    )
+    image = models.FileField(null=True, blank=True)
     history = HistoricalRecords()
 
     def __str__(self):
@@ -31,9 +36,8 @@ class Bucket(BaseModelWithUID):
 
 
 class Sample(BaseModelWithUID):
-    bucket = models.ForeignKey(Bucket, on_delete=models.CASCADE)
+    storage = models.ForeignKey(Storage, on_delete=models.CASCADE)
     created_by = models.ForeignKey("core.User", on_delete=models.CASCADE)
-    date = models.DateTimeField()
     style_no = models.CharField(max_length=255)
     sku_no = models.CharField(max_length=255)
     item = models.CharField(max_length=255)
@@ -62,10 +66,9 @@ class Sample(BaseModelWithUID):
         return f"{self.name}-{self.bucket.name}"
 
 
-class Drawer(BaseModelWithUID):
-    bucket = models.ForeignKey(Bucket, on_delete=models.CASCADE)
+class StorageFile(BaseModelWithUID):
+    storage = models.ForeignKey(Storage, on_delete=models.CASCADE)
     created_by = models.ForeignKey("core.User", on_delete=models.CASCADE)
-    date = models.DateTimeField()
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE
     )
@@ -79,7 +82,7 @@ class Drawer(BaseModelWithUID):
     history = HistoricalRecords()
 
     def __str__(self):
-        return f"{self.name}-{self.bucket.name}"
+        return f"{self.name}-{self.storage.name}"
 
 
 class File(BaseModelWithUID):
@@ -94,7 +97,7 @@ class File(BaseModelWithUID):
     history = HistoricalRecords()
 
     def __str__(self):
-        return f"{self.file_name}-{self.sample.name}"
+        return f"{self.file_name}"
 
 
 class SampleFile(BaseModelWithUID):
@@ -108,15 +111,15 @@ class SampleFile(BaseModelWithUID):
         return f"{self.sample.name}-{self.file.file_name}"
 
 
-class DrawerFile(BaseModelWithUID):
-    drawer = models.ForeignKey(Drawer, on_delete=models.CASCADE)
+class StorageFileFile(BaseModelWithUID):
+    storage_file = models.ForeignKey(StorageFile, on_delete=models.CASCADE)
     file = models.ForeignKey(File, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ("drawer", "file")
+        unique_together = ("storage_file", "file")
 
     def __str__(self):
-        return f"{self.drawer.name}-{self.file.file_name}"
+        return f"{self.storage_file.name}-{self.file.file_name}"
 
 
 class Buyer(BaseModelWithUID):
@@ -125,9 +128,9 @@ class Buyer(BaseModelWithUID):
         "organizations.Organization", on_delete=models.CASCADE
     )
     name = models.CharField(max_length=255)
-    street = models.CharField(max_length=255)
-    city = models.CharField(max_length=255)
-    state = models.CharField(max_length=255, null=True, blank=True)
+    street = models.CharField(max_length=255, null=True, blank=True)
+    city = models.CharField(max_length=255, null=True, blank=True)
+    state = models.CharField(max_length=255)
     country = models.CharField(max_length=255)
     status = models.CharField(
         max_length=20,

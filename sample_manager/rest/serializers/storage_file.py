@@ -2,10 +2,10 @@ from django.db import transaction
 from rest_framework import serializers
 
 from common.serializers import FileSlimSerializer
-from sample_manager.models import Bucket, Drawer, DrawerFile, File
+from sample_manager.models import File, Storage, StorageFile, StorageFileFile
 
 
-class DrawerSerializer(serializers.ModelSerializer):
+class StorageFileSerializer(serializers.ModelSerializer):
     file_uids = serializers.ListField(
         child=serializers.CharField(),
         write_only=True,
@@ -14,10 +14,10 @@ class DrawerSerializer(serializers.ModelSerializer):
         required=False,
     )
     files = serializers.SerializerMethodField()
-    bucket_uid = serializers.CharField()
+    storage_uid = serializers.CharField(write_only=True)
 
     class Meta:
-        model = Drawer
+        model = StorageFile
         fields = [
             "id",
             "uid",
@@ -29,6 +29,7 @@ class DrawerSerializer(serializers.ModelSerializer):
             "status",
             "file_uids",
             "files",
+            "storage_uid",
         ]
         read_only_fields = [
             "bucket",
@@ -40,7 +41,7 @@ class DrawerSerializer(serializers.ModelSerializer):
         ]
 
     def get_files(self, obj):
-        files_ids = DrawerFile.objects.filter(sample=obj).values_list(
+        files_ids = StorageFileFile.objects.filter(sample=obj).values_list(
             "file_id", flat=True
         )
         files = File.objects.filter(id__in=files_ids)
@@ -48,41 +49,50 @@ class DrawerSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        bucket_uid = validated_data.pop("bucket_uid")
+        storage_uid = validated_data.pop("storage_uid")
         file_uids = validated_data.pop("file_uids", [])
         user = self.context["request"].user
         organization = user.get_organization()
 
-        bucket = Bucket.objects.filter(uid=bucket_uid).first()
-        if bucket is None:
-            raise serializers.ValidationError("No bucket found with this given uid")
+        storage = Storage.objects.filter(uid=storage_uid).first()
+        if storage is None:
+            raise serializers.ValidationError("No Storage found with this given uid")
 
         files = File.objects.filter(uid__in=file_uids)
-        drawer = Drawer.objects.create(
-            bucket=bucket, created_by=user, organization=organization, **validated_data
+        storage_file = StorageFile.objects.create(
+            storage=storage,
+            created_by=user,
+            organization=organization,
+            **validated_data,
         )
 
-        drawer_files = [DrawerFile(drawer=drawer, file=f) for f in files]
-        DrawerFile.objects.bulk_create(drawer_files)
-        return drawer
+        storage_files_files = [
+            StorageFileFile(storage_file=storage_file, file=f) for f in files
+        ]
+        StorageFileFile.objects.bulk_create(storage_files_files)
+        return storage_file
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        bucket_uid = validated_data.pop("bucket_uid", None)
+        storage_uid = validated_data.pop("storage_uid", None)
         file_uids = validated_data.pop("file_uids", None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        if bucket_uid:
-            bucket = Bucket.objects.filter(uid=bucket_uid).first()
-            if bucket is None:
-                raise serializers.ValidationError("No bucket found with this given uid")
-            instance.bucket = bucket
+        if storage_uid:
+            storage = Storage.objects.filter(uid=storage_uid).first()
+            if storage is None:
+                raise serializers.ValidationError(
+                    "No Storage found with this given uid"
+                )
+            instance.storage = storage
 
         instance.save()
         if file_uids is not None:
-            DrawerFile.objects.filter(drawer=instance).delete()
+            StorageFileFile.objects.filter(storage_file=instance).delete()
             files = File.objects.filter(uid__in=file_uids)
-            drawer_files = [DrawerFile(drawer=instance, file=f) for f in files]
-            DrawerFile.objects.bulk_create(drawer_files)
+            storage_file_files = [
+                StorageFileFile(storage_file=instance, file=f) for f in files
+            ]
+            StorageFileFile.objects.bulk_create(storage_file_files)
 
         return instance

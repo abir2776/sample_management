@@ -1,25 +1,25 @@
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated, OR
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from common.choices import Status
-from sample_manager.models import Bucket
+from sample_manager.models import Storage
 from sample_manager.permissions import (
     IsAdmin,
     IsManager,
     IsMerchandiser,
     IsOwner,
 )
-from sample_manager.rest.serializers.bucket import BucketSerializer
+from sample_manager.rest.serializers.storage import StorageSerializer
 
 
-class BucketListCreateView(ListCreateAPIView):
-    serializer_class = BucketSerializer
+class StorageListCreateView(ListCreateAPIView):
+    serializer_class = StorageSerializer
 
     def get_queryset(self):
         organization = self.request.user.get_organization()
-        return Bucket.objects.filter(organization=organization)
+        return Storage.objects.filter(organization=organization)
 
     def get_permissions(self):
         method = self.request.method
@@ -28,14 +28,14 @@ class BucketListCreateView(ListCreateAPIView):
             return [IsAuthenticated()]
 
         if method == "POST":
-            return [IsOwner() | IsAdmin() | IsManager() | IsMerchandiser()]
+            return [OR(IsOwner(), OR(IsAdmin(), OR(IsManager(), IsMerchandiser())))]
 
         return [IsAuthenticated()]
 
 
-class BucketDetailView(RetrieveUpdateDestroyAPIView):
-    serializer_class = BucketSerializer
-    queryset = Bucket.objects.all()
+class StorageDetailView(RetrieveUpdateDestroyAPIView):
+    serializer_class = StorageSerializer
+    queryset = Storage.objects.all()
     lookup_field = "uid"
 
     def get_permissions(self):
@@ -45,17 +45,17 @@ class BucketDetailView(RetrieveUpdateDestroyAPIView):
             return [IsAuthenticated()]
 
         if method in ["PUT", "PATCH"]:
-            return [IsOwner() | IsAdmin() | IsManager() | IsMerchandiser()]
+            return [OR(IsOwner(), OR(IsAdmin(), OR(IsManager(), IsMerchandiser())))]
 
         if method == "DELETE":
-            return [IsOwner() | IsAdmin()]
+            return [OR(IsOwner(), IsAdmin())]
 
         return [IsAuthenticated()]
 
     def delete(self, request, *args, **kwargs):
-        bucket = self.get_object()
-        bucket.status = Status.REMOVED
-        bucket.save()
+        storage = self.get_object()
+        storage.status = Status.REMOVED
+        storage.save()
         return Response(
             {"detail": "Bucket deleted successfully"}, status=status.HTTP_204_NO_CONTENT
         )

@@ -1,6 +1,6 @@
 from rest_framework import status
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import OR, IsAuthenticated
 from rest_framework.response import Response
 
 from common.choices import Status
@@ -18,9 +18,11 @@ class SampleListCreateView(ListCreateAPIView):
     serializer_class = SampleSerializer
 
     def get_queryset(self):
-        bucket_uid = self.kwargs.get("bucket_uid")
+        storage_uid = self.kwargs.get("storage_uid")
         organization = self.request.user.get_organization()
-        return Sample.objects.filter(organization=organization, bucket__uid=bucket_uid)
+        return Sample.objects.filter(
+            organization=organization, storage__uid=storage_uid
+        )
 
     def get_permissions(self):
         method = self.request.method
@@ -29,7 +31,7 @@ class SampleListCreateView(ListCreateAPIView):
             return [IsAuthenticated()]
 
         if method == "POST":
-            return [IsOwner() | IsAdmin() | IsManager() | IsMerchandiser()]
+            return [OR(IsOwner(), OR(IsAdmin(), OR(IsManager(), IsMerchandiser())))]
 
         return [IsAuthenticated()]
 
@@ -45,7 +47,7 @@ class SampleDetailView(RetrieveUpdateDestroyAPIView):
             return [IsAuthenticated()]
 
         if method in ["PUT", "PATCH"]:
-            return [IsOwner() | IsAdmin() | IsManager() | IsMerchandiser()]
+            return [OR(IsOwner(), OR(IsAdmin(), OR(IsManager(), IsMerchandiser())))]
 
         if method == "DELETE":
             return [IsOwner() | IsAdmin()]
@@ -53,9 +55,11 @@ class SampleDetailView(RetrieveUpdateDestroyAPIView):
         return [IsAuthenticated()]
 
     def get_queryset(self):
-        bucket_uid = self.kwargs.get("bucket_uid")
+        storage_uid = self.kwargs.get("storage_uid")
         organization = self.request.user.get_organization()
-        return Sample.objects.filter(organization=organization, bucket__uid=bucket_uid)
+        return Sample.objects.filter(
+            organization=organization, storage__uid=storage_uid
+        )
 
     def delete(self, request, *args, **kwargs):
         sample = self.get_object()

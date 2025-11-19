@@ -1,6 +1,6 @@
 from rest_framework import status
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, OR
 from rest_framework.response import Response
 
 from common.choices import Status
@@ -26,7 +26,7 @@ class BuyerListCreateView(ListCreateAPIView):
             return [IsAuthenticated()]
 
         if method == "POST":
-            return [IsOwner() | IsAdmin()]
+            return [OR(IsOwner(), IsAdmin())]
 
         return [IsAuthenticated()]
 
@@ -42,10 +42,10 @@ class BuyerDetailView(RetrieveUpdateDestroyAPIView):
             return [IsAuthenticated()]
 
         if method in ["PUT", "PATCH"]:
-            return [IsOwner() | IsAdmin()]
+            return [OR(IsOwner(), IsAdmin())]
 
         if method == "DELETE":
-            return [IsOwner() | IsAdmin()]
+            return [OR(IsOwner(), IsAdmin())]
 
         return [IsAuthenticated()]
 

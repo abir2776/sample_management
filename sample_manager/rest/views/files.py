@@ -1,6 +1,6 @@
 from rest_framework import status
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import OR, IsAuthenticated
 from rest_framework.response import Response
 
 from common.choices import Status
@@ -27,7 +27,7 @@ class FileListCreateView(ListCreateAPIView):
             return [IsAuthenticated()]
 
         if method == "POST":
-            return [IsOwner() | IsAdmin() | IsManager() | IsMerchandiser()]
+            return [OR(IsOwner(), OR(IsAdmin(), OR(IsManager(), IsMerchandiser())))]
 
         return [IsAuthenticated()]
 
@@ -43,7 +43,7 @@ class FileDetailView(RetrieveUpdateDestroyAPIView):
             return [IsAuthenticated()]
 
         if method in ["PUT", "PATCH"]:
-            return [IsOwner() | IsAdmin() | IsManager() | IsMerchandiser()]
+            return [OR(IsOwner(), OR(IsAdmin(), OR(IsManager(), IsMerchandiser())))]
 
         if method == "DELETE":
             return [IsOwner() | IsAdmin()]

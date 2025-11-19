@@ -3,12 +3,12 @@ from rest_framework import serializers
 
 from common.serializers import BuyerSlimSerializer, FileSlimSerializer
 from sample_manager.models import (
-    Bucket,
     Buyer,
     File,
     Sample,
     SampleBuyerConnection,
     SampleFile,
+    Storage,
 )
 
 
@@ -28,7 +28,7 @@ class SampleSerializer(serializers.ModelSerializer):
     )
     files = serializers.SerializerMethodField()
     buyers = serializers.SerializerMethodField()
-    bucket_uid = serializers.CharField()
+    storage_uid = serializers.CharField(write_only=True)
 
     class Meta:
         model = Sample
@@ -53,7 +53,7 @@ class SampleSerializer(serializers.ModelSerializer):
             "status",
             "file_uids",
             "files",
-            "bucket_uid",
+            "storage_uid",
             "buyer_uids",
             "buyers",
         ]
@@ -82,13 +82,13 @@ class SampleSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        bucket_uid = validated_data.pop("bucket_uid")
+        storage_uid = validated_data.pop("storage_uid")
         file_uids = validated_data.pop("file_uids", [])
         buyer_uids = validated_data.pop("buyer_uids", [])
         user = self.context["request"].user
         organization = user.get_organization()
 
-        bucket = Bucket.objects.filter(uid=bucket_uid).first()
+        bucket = Storage.objects.filter(uid=storage_uid).first()
         if bucket is None:
             raise serializers.ValidationError("No bucket found with this given uid")
 
@@ -110,13 +110,13 @@ class SampleSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        bucket_uid = validated_data.pop("bucket_uid", None)
+        storage_uid = validated_data.pop("storage_uid", None)
         file_uids = validated_data.pop("file_uids", None)
         buyer_uids = validated_data.pop("buyer_uids", None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        if bucket_uid:
-            bucket = Bucket.objects.filter(uid=bucket_uid).first()
+        if storage_uid:
+            bucket = Storage.objects.filter(uid=storage_uid).first()
             if bucket is None:
                 raise serializers.ValidationError("No bucket found with this given uid")
             instance.bucket = bucket

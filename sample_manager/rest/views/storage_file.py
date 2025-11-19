@@ -1,26 +1,28 @@
 from rest_framework import status
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import OR, IsAuthenticated
 from rest_framework.response import Response
 
 from common.choices import Status
-from sample_manager.models import Drawer
+from sample_manager.models import StorageFile
 from sample_manager.permissions import (
     IsAdmin,
     IsManager,
     IsMerchandiser,
     IsOwner,
 )
-from sample_manager.rest.serializers.drawer import DrawerSerializer
+from sample_manager.rest.serializers.storage_file import StorageFileSerializer
 
 
-class DrawerListCreateView(ListCreateAPIView):
-    serializer_class = DrawerSerializer
+class StorageFileListCreateView(ListCreateAPIView):
+    serializer_class = StorageFileSerializer
 
     def get_queryset(self):
-        bucket_uid = self.kwargs.get("bucket_uid")
+        storage_uid = self.kwargs.get("storage_uid")
         organization = self.request.user.get_organization()
-        return Drawer.objects.filter(organization=organization, bucket__uid=bucket_uid)
+        return StorageFile.objects.filter(
+            organization=organization, storage__uid=storage_uid
+        )
 
     def get_permissions(self):
         method = self.request.method
@@ -29,13 +31,13 @@ class DrawerListCreateView(ListCreateAPIView):
             return [IsAuthenticated()]
 
         if method == "POST":
-            return [IsOwner() | IsAdmin() | IsManager() | IsMerchandiser()]
+            return [OR(IsOwner(), OR(IsAdmin(), OR(IsManager(), IsMerchandiser())))]
 
         return [IsAuthenticated()]
 
 
-class DrawerDetailView(RetrieveUpdateDestroyAPIView):
-    serializer_class = DrawerSerializer
+class StorageFileDetailView(RetrieveUpdateDestroyAPIView):
+    serializer_class = StorageFileSerializer
     lookup_field = "uid"
 
     def get_permissions(self):
@@ -45,7 +47,7 @@ class DrawerDetailView(RetrieveUpdateDestroyAPIView):
             return [IsAuthenticated()]
 
         if method in ["PUT", "PATCH"]:
-            return [IsOwner() | IsAdmin() | IsManager() | IsMerchandiser()]
+            return [OR(IsOwner(), OR(IsAdmin(), OR(IsManager(), IsMerchandiser())))]
 
         if method == "DELETE":
             return [IsOwner() | IsAdmin()]
@@ -53,14 +55,16 @@ class DrawerDetailView(RetrieveUpdateDestroyAPIView):
         return [IsAuthenticated()]
 
     def get_queryset(self):
-        bucket_uid = self.kwargs.get("bucket_uid")
+        storage_uid = self.kwargs.get("storage_uid")
         organization = self.request.user.get_organization()
-        return Drawer.objects.filter(organization=organization, bucket__uid=bucket_uid)
+        return StorageFile.objects.filter(
+            organization=organization, storage__uid=storage_uid
+        )
 
     def delete(self, request, *args, **kwargs):
-        drawer = self.get_object()
-        drawer.status = Status.REMOVED
-        drawer.save()
+        storage_file = self.get_object()
+        storage_file.status = Status.REMOVED
+        storage_file.save()
         return Response(
             {"detail": "Drawer deleted successfully"}, status=status.HTTP_204_NO_CONTENT
         )
