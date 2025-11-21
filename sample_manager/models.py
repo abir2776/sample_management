@@ -3,13 +3,24 @@ from simple_history.models import HistoricalRecords
 
 from common.choices import Status
 from common.models import BaseModelWithUID
-from .choices import StorageType
+
+from .choices import SampleStatus, SampleTypes, SizeType, StorageType, WeightType
+
+
+class Project(BaseModelWithUID):
+    company = models.ForeignKey("organization.company", on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    started_at = models.DateTimeField()
+    will_finish_at = models.DateTimeField()
+
+    history = HistoricalRecords()
+
+    def __str__(self):
+        return f"{self.name}_{self.started_at}"
 
 
 class Storage(BaseModelWithUID):
-    organization = models.ForeignKey(
-        "organizations.Organization", on_delete=models.CASCADE
-    )
+    company = models.ForeignKey("organizations.Company", on_delete=models.CASCADE)
     created_by = models.ForeignKey("core.User", on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
@@ -35,45 +46,53 @@ class Storage(BaseModelWithUID):
         return f"{self.name}-{self.created_by.first_name}"
 
 
-class Sample(BaseModelWithUID):
+class GarmentSample(BaseModelWithUID):
     storage = models.ForeignKey(Storage, on_delete=models.CASCADE)
+    sample_id = models.CharField(max_length=255)
     created_by = models.ForeignKey("core.User", on_delete=models.CASCADE)
+    arrival_date = models.DateTimeField()
     style_no = models.CharField(max_length=255)
     sku_no = models.CharField(max_length=255)
     item = models.CharField(max_length=255)
     fabrication = models.CharField(max_length=255)
-    weight = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
+    weight = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    weight_type = models.CharField(
+        max_length=20,
+        choices=WeightType.choices,
+        default=WeightType.GM,
+        null=True,
+        blank=True,
     )
     color = models.CharField(max_length=255)
     size = models.CharField(max_length=255)
-    sample_type = models.CharField(max_length=255)
-    comments = models.CharField(max_length=500, null=True, blank=True)
-    organization = models.ForeignKey(
-        "organizations.Organization", on_delete=models.CASCADE
+    size_type = models.CharField(
+        max_length=20, choices=SizeType.choices, default=SizeType.LETTER
     )
+    types = models.CharField(
+        max_length=20, choices=SampleTypes.choices, null=True, blank=True
+    )
+    comments = models.CharField(max_length=500, null=True, blank=True)
+    company = models.ForeignKey("organizations.Company", on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
     status = models.CharField(
         max_length=20,
-        choices=Status.choices,
-        default=Status.ACTIVE,
+        choices=SampleStatus.choices,
+        default=SampleStatus.ACTIVE,
     )
     history = HistoricalRecords()
 
     def __str__(self):
-        return f"{self.name}-{self.bucket.name}"
+        return f"{self.name}-{self.storage.name}"
 
 
-class StorageFile(BaseModelWithUID):
+class File(BaseModelWithUID):
     storage = models.ForeignKey(Storage, on_delete=models.CASCADE)
+    file_id = models.CharField(max_length=255)
     created_by = models.ForeignKey("core.User", on_delete=models.CASCADE)
-    organization = models.ForeignKey(
-        "organizations.Organization", on_delete=models.CASCADE
-    )
+    company = models.ForeignKey("organizations.Company", on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
-    description = models.CharField(max_length=255)
+    comments = models.CharField(max_length=500, null=True, blank=True)
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -85,7 +104,8 @@ class StorageFile(BaseModelWithUID):
         return f"{self.name}-{self.storage.name}"
 
 
-class File(BaseModelWithUID):
+class Image(BaseModelWithUID):
+    company = models.ForeignKey("organizations.Company", on_delete=models.CASCADE)
     file = models.FileField()
     file_name = models.CharField(max_length=255)
     created_by = models.ForeignKey("core.User", on_delete=models.CASCADE)
@@ -100,33 +120,90 @@ class File(BaseModelWithUID):
         return f"{self.file_name}"
 
 
-class SampleFile(BaseModelWithUID):
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-    file = models.ForeignKey(File, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ("sample", "file")
-
-    def __str__(self):
-        return f"{self.sample.name}-{self.file.file_name}"
-
-
-class StorageFileFile(BaseModelWithUID):
-    storage_file = models.ForeignKey(StorageFile, on_delete=models.CASCADE)
-    file = models.ForeignKey(File, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ("storage_file", "file")
+class Note(BaseModelWithUID):
+    company = models.ForeignKey("organizations.Company", on_delete=models.CASCADE)
+    title = models.CharField(max_length=255, null=True, blank=True)
+    description = models.CharField(max_length=500)
+    created_by = models.ForeignKey("core.User", on_delete=models.CASCADE)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+    )
+    history = HistoricalRecords()
 
     def __str__(self):
-        return f"{self.storage_file.name}-{self.file.file_name}"
+        return f"{self.title}-{self.status}"
+
+
+class SampleImage(BaseModelWithUID):
+    company = models.ForeignKey("organizations.Company", on_delete=models.CASCADE)
+    sample = models.ForeignKey(GarmentSample, on_delete=models.CASCADE)
+    image = models.ForeignKey(Image, on_delete=models.CASCADE)
+    history = HistoricalRecords()
+
+    class Meta:
+        unique_together = ("sample", "image")
+
+    def __str__(self):
+        return f"{self.sample.name}-{self.image.file_name}"
+
+
+class ProjectImage(BaseModelWithUID):
+    company = models.ForeignKey("organizations.Company", on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    image = models.ForeignKey(Image, on_delete=models.CASCADE)
+    history = HistoricalRecords()
+
+    class Meta:
+        unique_together = ("project", "image")
+
+    def __str__(self):
+        return f"{self.project.name}-{self.image.file_name}"
+
+
+class FileImage(BaseModelWithUID):
+    company = models.ForeignKey("organizations.Company", on_delete=models.CASCADE)
+    file = models.ForeignKey(File, on_delete=models.CASCADE)
+    image = models.ForeignKey(Image, on_delete=models.CASCADE)
+    history = HistoricalRecords()
+
+    class Meta:
+        unique_together = ("file", "image")
+
+    def __str__(self):
+        return f"{self.file.name}-{self.image.file_name}"
+
+
+class SampleNote(BaseModelWithUID):
+    company = models.ForeignKey("organizations.Company", on_delete=models.CASCADE)
+    sample = models.ForeignKey(GarmentSample, on_delete=models.CASCADE)
+    note = models.ForeignKey(Note, on_delete=models.CASCADE)
+    history = HistoricalRecords()
+
+    class Meta:
+        unique_together = ("sample", "note")
+
+    def __str__(self):
+        return f"{self.sample.name}-{self.note.title}"
+
+
+class FileNote(BaseModelWithUID):
+    company = models.ForeignKey("organizations.Company", on_delete=models.CASCADE)
+    file = models.ForeignKey(File, on_delete=models.CASCADE)
+    note = models.ForeignKey(Note, on_delete=models.CASCADE)
+    history = HistoricalRecords()
+
+    class Meta:
+        unique_together = ("file", "note")
+
+    def __str__(self):
+        return f"{self.file.name}-{self.note.title}"
 
 
 class Buyer(BaseModelWithUID):
     created_by = models.ForeignKey("core.User", on_delete=models.CASCADE)
-    organization = models.ForeignKey(
-        "organizations.Organization", on_delete=models.CASCADE
-    )
+    company = models.ForeignKey("organizations.Company", on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     street = models.CharField(max_length=255, null=True, blank=True)
     city = models.CharField(max_length=255, null=True, blank=True)
@@ -144,7 +221,8 @@ class Buyer(BaseModelWithUID):
 
 
 class SampleBuyerConnection(BaseModelWithUID):
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    company = models.ForeignKey("organizations.Company", on_delete=models.CASCADE)
+    sample = models.ForeignKey(GarmentSample, on_delete=models.CASCADE)
     buyer = models.ForeignKey(Buyer, on_delete=models.CASCADE)
     status = models.CharField(
         max_length=20,
@@ -153,5 +231,80 @@ class SampleBuyerConnection(BaseModelWithUID):
     )
     history = HistoricalRecords()
 
+    class Meta:
+        unique_together = ("sample", "buyer")
+
     def __str__(self):
         return f"{self.sample.name}-{self.buyer.name}"
+
+
+class ProjectBuyerConnection(BaseModelWithUID):
+    company = models.ForeignKey("organizations.Company", on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    buyer = models.ForeignKey(Buyer, on_delete=models.CASCADE)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+    )
+    history = HistoricalRecords()
+
+    class Meta:
+        unique_together = ("project", "buyer")
+
+    def __str__(self):
+        return f"{self.project.name}-{self.buyer.name}"
+
+
+class FileBuyerConnection(BaseModelWithUID):
+    company = models.ForeignKey("organizations.Company", on_delete=models.CASCADE)
+    file = models.ForeignKey(File, on_delete=models.CASCADE)
+    buyer = models.ForeignKey(Buyer, on_delete=models.CASCADE)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+    )
+    history = HistoricalRecords()
+
+    class Meta:
+        unique_together = ("file", "buyer")
+
+    def __str__(self):
+        return f"{self.file.name}-{self.buyer.name}"
+
+
+class ProjectSample(BaseModelWithUID):
+    company = models.ForeignKey("organizations.Company", on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    sample = models.ForeignKey(GarmentSample, on_delete=models.CASCADE)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+    )
+    history = HistoricalRecords()
+
+    class Meta:
+        unique_together = ("project", "sample")
+
+    def __str__(self):
+        return f"{self.project.name}-{self.sample.name}"
+
+
+class ProjectFile(BaseModelWithUID):
+    company = models.ForeignKey("organizations.Company", on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    file = models.ForeignKey(File, on_delete=models.CASCADE)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+    )
+    history = HistoricalRecords()
+
+    class Meta:
+        unique_together = ("project", "file")
+
+    def __str__(self):
+        return f"{self.project.name}-{self.file.name}"

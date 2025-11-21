@@ -5,10 +5,7 @@ from rest_framework.response import Response
 
 from common.choices import Status
 from sample_manager.models import Buyer
-from sample_manager.permissions import (
-    IsAdmin,
-    IsOwner,
-)
+from sample_manager.permissions import IsSuperAdmin, IsAdministrator
 from sample_manager.rest.serializers.buyer import BuyerSerializer
 
 
@@ -16,8 +13,8 @@ class BuyerListCreateView(ListCreateAPIView):
     serializer_class = BuyerSerializer
 
     def get_queryset(self):
-        organization = self.request.user.get_organization()
-        return Buyer.objects.filter(organization=organization)
+        company = self.request.user.get_company()
+        return Buyer.objects.filter(company=company)
 
     def get_permissions(self):
         method = self.request.method
@@ -26,7 +23,7 @@ class BuyerListCreateView(ListCreateAPIView):
             return [IsAuthenticated()]
 
         if method == "POST":
-            return [OR(IsOwner(), IsAdmin())]
+            return [IsSuperAdmin()]
 
         return [IsAuthenticated()]
 
@@ -42,16 +39,16 @@ class BuyerDetailView(RetrieveUpdateDestroyAPIView):
             return [IsAuthenticated()]
 
         if method in ["PUT", "PATCH"]:
-            return [OR(IsOwner(), IsAdmin())]
+            return [OR(IsSuperAdmin(), IsAdministrator())]
 
         if method == "DELETE":
-            return [OR(IsOwner(), IsAdmin())]
+            return [IsSuperAdmin()]
 
         return [IsAuthenticated()]
 
     def get_queryset(self):
-        organization = self.request.user.get_organization()
-        return Buyer.objects.filter(organization=organization)
+        company = self.request.user.get_company()
+        return Buyer.objects.filter(company=company)
 
     def delete(self, request, *args, **kwargs):
         buyer = self.get_object()

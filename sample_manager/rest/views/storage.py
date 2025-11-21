@@ -1,15 +1,16 @@
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, OR
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.permissions import OR, IsAuthenticated
 from rest_framework.response import Response
 
 from common.choices import Status
 from sample_manager.models import Storage
 from sample_manager.permissions import (
-    IsAdmin,
+    IsAccountant,
+    IsAdministrator,
     IsManager,
     IsMerchandiser,
-    IsOwner,
+    IsSuperAdmin,
 )
 from sample_manager.rest.serializers.storage import StorageSerializer
 
@@ -18,8 +19,8 @@ class StorageListCreateView(ListCreateAPIView):
     serializer_class = StorageSerializer
 
     def get_queryset(self):
-        organization = self.request.user.get_organization()
-        return Storage.objects.filter(organization=organization)
+        company = self.request.user.get_company()
+        return Storage.objects.filter(company=company)
 
     def get_permissions(self):
         method = self.request.method
@@ -28,7 +29,15 @@ class StorageListCreateView(ListCreateAPIView):
             return [IsAuthenticated()]
 
         if method == "POST":
-            return [OR(IsOwner(), OR(IsAdmin(), OR(IsManager(), IsMerchandiser())))]
+            return [
+                OR(
+                    IsAdministrator(),
+                    OR(
+                        IsAccountant(),
+                        OR(IsSuperAdmin(), OR(IsManager(), IsMerchandiser())),
+                    ),
+                )
+            ]
 
         return [IsAuthenticated()]
 
@@ -45,10 +54,18 @@ class StorageDetailView(RetrieveUpdateDestroyAPIView):
             return [IsAuthenticated()]
 
         if method in ["PUT", "PATCH"]:
-            return [OR(IsOwner(), OR(IsAdmin(), OR(IsManager(), IsMerchandiser())))]
+            return [
+                OR(
+                    IsAdministrator(),
+                    OR(
+                        IsAccountant(),
+                        OR(IsSuperAdmin(), OR(IsManager(), IsMerchandiser())),
+                    ),
+                )
+            ]
 
         if method == "DELETE":
-            return [OR(IsOwner(), IsAdmin())]
+            return [OR(IsSuperAdmin, IsAdministrator())]
 
         return [IsAuthenticated()]
 

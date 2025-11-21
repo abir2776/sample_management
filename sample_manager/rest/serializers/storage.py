@@ -9,12 +9,12 @@ class StorageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Storage
         fields = "__all__"
-        read_only_fields = ["id", "uid", "organization", "created_by", "parent"]
+        read_only_fields = ["id", "uid", "company", "created_by", "parent"]
 
     def create(self, validated_data):
         parent_uid = validated_data.pop("parent_uid", None)
         user = self.context["request"].user
-        organization = user.get_organization()
+        company = user.get_company()
         parent = None
         if parent_uid:
             parent = Storage.objects.filter(uid=parent_uid).first()
@@ -24,7 +24,7 @@ class StorageSerializer(serializers.ModelSerializer):
                 )
 
         bucket = Storage.objects.create(
-            created_by=user, organization=organization, parent=parent, **validated_data
+            created_by=user, company=company, parent=parent, **validated_data
         )
         bucket.history._history_user = user
         bucket.save()

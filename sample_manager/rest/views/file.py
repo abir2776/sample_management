@@ -4,14 +4,15 @@ from rest_framework.permissions import OR, IsAuthenticated
 from rest_framework.response import Response
 
 from common.choices import Status
-from sample_manager.models import StorageFile
+from sample_manager.models import File
 from sample_manager.permissions import (
-    IsAdmin,
+    IsAccountant,
+    IsAdministrator,
     IsManager,
     IsMerchandiser,
-    IsOwner,
+    IsSuperAdmin,
 )
-from sample_manager.rest.serializers.storage_file import StorageFileSerializer
+from sample_manager.rest.serializers.file import StorageFileSerializer
 
 
 class StorageFileListCreateView(ListCreateAPIView):
@@ -19,10 +20,8 @@ class StorageFileListCreateView(ListCreateAPIView):
 
     def get_queryset(self):
         storage_uid = self.kwargs.get("storage_uid")
-        organization = self.request.user.get_organization()
-        return StorageFile.objects.filter(
-            organization=organization, storage__uid=storage_uid
-        )
+        company = self.request.user.get_organization()
+        return File.objects.filter(company=company, storage__uid=storage_uid)
 
     def get_permissions(self):
         method = self.request.method
@@ -31,7 +30,15 @@ class StorageFileListCreateView(ListCreateAPIView):
             return [IsAuthenticated()]
 
         if method == "POST":
-            return [OR(IsOwner(), OR(IsAdmin(), OR(IsManager(), IsMerchandiser())))]
+            return [
+                OR(
+                    IsAdministrator(),
+                    OR(
+                        IsAccountant(),
+                        OR(IsSuperAdmin(), OR(IsManager(), IsMerchandiser())),
+                    ),
+                )
+            ]
 
         return [IsAuthenticated()]
 
@@ -47,24 +54,30 @@ class StorageFileDetailView(RetrieveUpdateDestroyAPIView):
             return [IsAuthenticated()]
 
         if method in ["PUT", "PATCH"]:
-            return [OR(IsOwner(), OR(IsAdmin(), OR(IsManager(), IsMerchandiser())))]
+            return [
+                OR(
+                    IsAdministrator(),
+                    OR(
+                        IsAccountant(),
+                        OR(IsSuperAdmin(), OR(IsManager(), IsMerchandiser())),
+                    ),
+                )
+            ]
 
         if method == "DELETE":
-            return [IsOwner() | IsAdmin()]
+            return [OR(IsSuperAdmin, IsAdministrator())]
 
         return [IsAuthenticated()]
 
     def get_queryset(self):
         storage_uid = self.kwargs.get("storage_uid")
-        organization = self.request.user.get_organization()
-        return StorageFile.objects.filter(
-            organization=organization, storage__uid=storage_uid
-        )
+        company = self.request.user.get_organization()
+        return File.objects.filter(company=company, storage__uid=storage_uid)
 
     def delete(self, request, *args, **kwargs):
-        storage_file = self.get_object()
-        storage_file.status = Status.REMOVED
-        storage_file.save()
+        file = self.get_object()
+        file.status = Status.REMOVED
+        file.save()
         return Response(
-            {"detail": "Drawer deleted successfully"}, status=status.HTTP_204_NO_CONTENT
+            {"detail": "File deleted successfully"}, status=status.HTTP_204_NO_CONTENT
         )

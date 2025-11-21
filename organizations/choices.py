@@ -1,16 +1,24 @@
 from django.db import models
 
 
-class OrganizationUserRole(models.TextChoices):
-    OWNER = "OWNER", "Owner"
-    ADMIN = "ADMIN", "Admin"
+class CompanyUserRole(models.TextChoices):
+    SUPER_ADMIN = "SUPER_ADMIN", "Super_admin"
+    ADMINISTRATOR = "ADMINISTRATOR", "Administrator"
     MANAGER = "MANAGER", "Manager"
-    RECRUITER = "MERCHANDISER", "Merchandiser"
-    VIEWER = "VIEWER", "Viewer"
+    ACCOUNTANT = "ACCOUNTANT", "Accountant"
+    MERCHANDISER = "MERCHANDISER", "Merchandiser"
+    STAFF = "STAFF", "Staff"
 
 
-class OrganizationInvitationStatus(models.TextChoices):
-    PENDING = "PENDING", "Pending"
-    ACCEPTED = "ACCEPTED", "Accepted"
-    DECLINED = "DECLINED", "Declined"
-    EXPIRED = "EXPIRED", "Expired"
+class DomainPlatformChoices(models.TextChoices):
+    NAMECHEAP = "NAMECHEAP", "Namecheap"
+    HOSTINGER = "HOSTINGER", "Hostinger"
+    GODADDY = "GODADDY", "Godaddy"
+    SPACESHIP = "SPACESHIP", "Spaceship"
+    DREAMHOST = "DREAMHOST", "Dreamhost"
+    BTCL = "BTCL", "BTCL"
+    SQUARESPACE = "SQUARESPACE", "Squarespace"
+    ZOHO = "ZOHO", "Zoho"
+    NAME_DOT_COM = "NAME_DOT_COM", "Name_dot_com"
+    GOOGLE = "GOOGLE", "Google"
+    OTHERS = "OTHERS", "Others"

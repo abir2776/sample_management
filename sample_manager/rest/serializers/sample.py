@@ -1,19 +1,29 @@
 from django.db import transaction
 from rest_framework import serializers
 
-from common.serializers import BuyerSlimSerializer, FileSlimSerializer
+from common.serializers import (
+    BuyerSlimSerializer,
+    ImageSlimSerializer,
+    NoteSlimSerializer,
+    ProjectSlimSerializer,
+)
+from sample_manager.choices import StorageType
 from sample_manager.models import (
     Buyer,
-    File,
-    Sample,
+    GarmentSample,
+    Image,
+    Note,
+    Project,
+    ProjectSample,
     SampleBuyerConnection,
-    SampleFile,
+    SampleImage,
+    SampleNote,
     Storage,
 )
 
 
 class SampleSerializer(serializers.ModelSerializer):
-    file_uids = serializers.ListField(
+    image_uids = serializers.ListField(
         child=serializers.CharField(),
         write_only=True,
         max_length=3,
@@ -26,36 +36,56 @@ class SampleSerializer(serializers.ModelSerializer):
         allow_empty=True,
         required=False,
     )
-    files = serializers.SerializerMethodField()
+    project_uids = serializers.ListField(
+        child=serializers.CharField(),
+        write_only=True,
+        allow_empty=True,
+        required=False,
+    )
+    note_uids = serializers.ListField(
+        child=serializers.CharField(),
+        write_only=True,
+        allow_empty=True,
+        required=False,
+    )
+    images = serializers.SerializerMethodField()
     buyers = serializers.SerializerMethodField()
+    projects = serializers.SerializerMethodField()
+    notes = serializers.SerializerMethodField()
     storage_uid = serializers.CharField(write_only=True)
 
     class Meta:
-        model = Sample
+        model = GarmentSample
         fields = [
             "id",
             "uid",
-            "date",
-            "bucket",
+            "arrival_date",
+            "storage",
+            "storage_id",
             "created_by",
             "style_no",
             "sku_no",
             "item",
             "fabrication",
             "weight",
+            "weight_type",
+            "size_type",
+            "types",
             "color",
             "size",
-            "sample_type",
+            "type",
             "comments",
             "organization",
             "name",
             "description",
             "status",
-            "file_uids",
-            "files",
+            "image_uids",
+            "images",
             "storage_uid",
             "buyer_uids",
             "buyers",
+            "project_uids",
+            "projects",
         ]
         read_only_fields = [
             "bucket",
@@ -67,11 +97,11 @@ class SampleSerializer(serializers.ModelSerializer):
         ]
 
     def get_files(self, obj):
-        files_ids = SampleFile.objects.filter(sample=obj).values_list(
+        image_ids = SampleImage.objects.filter(sample=obj).values_list(
             "file_id", flat=True
         )
-        files = File.objects.filter(id__in=files_ids)
-        return FileSlimSerializer(files, many=True).data
+        images = Image.objects.filter(id__in=image_ids)
+        return ImageSlimSerializer(images, many=True).data
 
     def get_buyers(self, obj):
         buyer_ids = SampleBuyerConnection.objects.filter(sample=obj).values_list(
@@ -80,59 +110,130 @@ class SampleSerializer(serializers.ModelSerializer):
         buyers = Buyer.objects.filter(id__in=buyer_ids)
         return BuyerSlimSerializer(buyers, many=True).data
 
+    def get_projects(self, obj):
+        project_ids = ProjectSample.objects.filter(sample=obj).values_list(
+            "project_id", flat=True
+        )
+        projects = Project.objects.filter(id__in=project_ids)
+        return ProjectSlimSerializer(projects, many=True).data
+
+    def get_notes(self, obj):
+        note_ids = SampleNote.objects.filter(sample=obj).values_list(
+            "note_id", flat=True
+        )
+        notes = Note.objects.filter(id__in=note_ids)
+        return NoteSlimSerializer(notes, many=True).data
+
     @transaction.atomic
     def create(self, validated_data):
         storage_uid = validated_data.pop("storage_uid")
-        file_uids = validated_data.pop("file_uids", [])
+        image_uids = validated_data.pop("image_uids", [])
         buyer_uids = validated_data.pop("buyer_uids", [])
+        project_uids = validated_data.pop("project_uids", [])
+        note_uids = validated_data.pop("note_uids", [])
+
         user = self.context["request"].user
-        organization = user.get_organization()
+        company = user.get_company()
 
-        bucket = Storage.objects.filter(uid=storage_uid).first()
-        if bucket is None:
-            raise serializers.ValidationError("No bucket found with this given uid")
+        storage = Storage.objects.filter(
+            uid=storage_uid, type=StorageType.SPACE
+        ).first()
+        if storage is None:
+            raise serializers.ValidationError("No Storage found with this given uid")
 
-        files = File.objects.filter(uid__in=file_uids)
-        buyers = Buyer.objects.filter(uid__in=buyer_uids)
-
-        sample = Sample.objects.create(
-            bucket=bucket, created_by=user, organization=organization, **validated_data
+        # Main sample creation
+        sample = GarmentSample.objects.create(
+            storage=storage,
+            created_by=user,
+            company=company,
+            **validated_data,
         )
 
-        sample_files = [SampleFile(sample=sample, file=f) for f in files]
-        sample_buyer_connection = [
-            SampleBuyerConnection(sample=sample, buyer=buyer) for buyer in buyers
-        ]
-        SampleFile.objects.bulk_create(sample_files)
-        SampleBuyerConnection.objects.bulk_create(sample_buyer_connection)
+        # Images
+        images = Image.objects.filter(uid__in=image_uids)
+        SampleImage.objects.bulk_create(
+            [SampleImage(sample=sample, image=img) for img in images]
+        )
+
+        # Buyers
+        buyers = Buyer.objects.filter(uid__in=buyer_uids)
+        SampleBuyerConnection.objects.bulk_create(
+            [SampleBuyerConnection(sample=sample, buyer=buyer) for buyer in buyers]
+        )
+
+        # Projects
+        projects = Project.objects.filter(uid__in=project_uids)
+        ProjectSample.objects.bulk_create(
+            [ProjectSample(sample=sample, project=project) for project in projects]
+        )
+
+        # Notes
+        notes = Note.objects.filter(uid__in=note_uids)
+        SampleNote.objects.bulk_create(
+            [SampleNote(sample=sample, note=note) for note in notes]
+        )
 
         return sample
 
     @transaction.atomic
     def update(self, instance, validated_data):
         storage_uid = validated_data.pop("storage_uid", None)
-        file_uids = validated_data.pop("file_uids", None)
+        image_uids = validated_data.pop("image_uids", None)
         buyer_uids = validated_data.pop("buyer_uids", None)
+        project_uids = validated_data.pop("project_uids", None)
+        note_uids = validated_data.pop("note_uids", None)
+
+        # Update primitive fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
+
+        # Update storage
         if storage_uid:
-            bucket = Storage.objects.filter(uid=storage_uid).first()
-            if bucket is None:
-                raise serializers.ValidationError("No bucket found with this given uid")
-            instance.bucket = bucket
+            storage = Storage.objects.filter(uid=storage_uid).first()
+            if storage is None:
+                raise serializers.ValidationError(
+                    "No storage found with this given uid"
+                )
+            instance.storage = storage
 
         instance.save()
-        if file_uids is not None:
-            SampleFile.objects.filter(sample=instance).delete()
-            files = File.objects.filter(uid__in=file_uids)
-            sample_files = [SampleFile(sample=instance, file=f) for f in files]
-            SampleFile.objects.bulk_create(sample_files)
+
+        # Update images
+        if image_uids is not None:
+            SampleImage.objects.filter(sample=instance).delete()
+            images = Image.objects.filter(uid__in=image_uids)
+            SampleImage.objects.bulk_create(
+                [SampleImage(sample=instance, image=img) for img in images]
+            )
+
+        # Update buyers
         if buyer_uids is not None:
             SampleBuyerConnection.objects.filter(sample=instance).delete()
             buyers = Buyer.objects.filter(uid__in=buyer_uids)
-            sample_buyers = [
-                SampleBuyerConnection(sample=instance, buyer=buyer) for buyer in buyers
-            ]
-            SampleBuyerConnection.objects.bulk_create(sample_buyers)
+            SampleBuyerConnection.objects.bulk_create(
+                [
+                    SampleBuyerConnection(sample=instance, buyer=buyer)
+                    for buyer in buyers
+                ]
+            )
+
+        # Update projects
+        if project_uids is not None:
+            ProjectSample.objects.filter(sample=instance).delete()
+            projects = Project.objects.filter(uid__in=project_uids)
+            ProjectSample.objects.bulk_create(
+                [
+                    ProjectSample(sample=instance, project=project)
+                    for project in projects
+                ]
+            )
+
+        # Update notes
+        if note_uids is not None:
+            SampleNote.objects.filter(sample=instance).delete()
+            notes = Note.objects.filter(uid__in=note_uids)
+            SampleNote.objects.bulk_create(
+                [SampleNote(sample=instance, note=note) for note in notes]
+            )
 
         return instance

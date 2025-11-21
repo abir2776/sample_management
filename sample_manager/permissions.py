@@ -1,28 +1,20 @@
 from rest_framework.permissions import BasePermission
 
 
-class IsOwner(BasePermission):
+class IsSuperAdmin(BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
         role = request.user.get_role()
-        return role == "OWNER"
+        return role == "SUPER_ADMIN"
 
 
-class IsAdminOrOwner(BasePermission):
+class IsAdministrator(BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
         role = request.user.get_role()
-        return role in ["OWNER", "ADMIN"]
-
-
-class IsAdmin(BasePermission):
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        role = request.user.get_role()
-        return role in ["ADMIN"]
+        return role == "ADMINISTRATOR"
 
 
 class IsManager(BasePermission):
@@ -30,15 +22,15 @@ class IsManager(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         role = request.user.get_role()
-        return role in ["MANAGER"]
+        return role == "MANAGER"
 
 
-class IsManagerOrMerchandiser(BasePermission):
+class IsAccountant(BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
         role = request.user.get_role()
-        return role in ["MANAGER", "MERCHANDISER"]
+        return role == "ACCOUNTANT"
 
 
 class IsMerchandiser(BasePermission):
@@ -46,12 +38,12 @@ class IsMerchandiser(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         role = request.user.get_role()
-        return role in ["MERCHANDISER"]
+        return role == "MERCHANDISER"
 
 
-class IsViewer(BasePermission):
+class IsStaff(BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
         role = request.user.get_role()
-        return role in ["VIEWER"]
+        return role == "STAFF"

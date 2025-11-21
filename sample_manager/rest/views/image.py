@@ -4,7 +4,7 @@ from rest_framework.permissions import OR, IsAuthenticated
 from rest_framework.response import Response
 
 from common.choices import Status
-from sample_manager.models import GarmentSample
+from sample_manager.models import Image
 from sample_manager.permissions import (
     IsAccountant,
     IsAdministrator,
@@ -12,16 +12,14 @@ from sample_manager.permissions import (
     IsMerchandiser,
     IsSuperAdmin,
 )
-from sample_manager.rest.serializers.sample import SampleSerializer
+from sample_manager.rest.serializers.image import ImageSerializer
 
 
-class SampleListCreateView(ListCreateAPIView):
-    serializer_class = SampleSerializer
+class ImageListCreateView(ListCreateAPIView):
+    serializer_class = ImageSerializer
 
     def get_queryset(self):
-        storage_uid = self.kwargs.get("storage_uid")
-        company = self.request.user.get_company()
-        return GarmentSample.objects.filter(company=company, storage__uid=storage_uid)
+        return Image.objects.filter()
 
     def get_permissions(self):
         method = self.request.method
@@ -43,8 +41,8 @@ class SampleListCreateView(ListCreateAPIView):
         return [IsAuthenticated()]
 
 
-class SampleDetailView(RetrieveUpdateDestroyAPIView):
-    serializer_class = SampleSerializer
+class ImageDetailView(RetrieveUpdateDestroyAPIView):
+    serializer_class = ImageSerializer
     lookup_field = "uid"
 
     def get_permissions(self):
@@ -70,14 +68,12 @@ class SampleDetailView(RetrieveUpdateDestroyAPIView):
         return [IsAuthenticated()]
 
     def get_queryset(self):
-        storage_uid = self.kwargs.get("storage_uid")
-        company = self.request.user.get_company()
-        return GarmentSample.objects.filter(company=company, storage__uid=storage_uid)
+        return Image.objects.filter()
 
     def delete(self, request, *args, **kwargs):
-        sample = self.get_object()
-        sample.status = Status.REMOVED
-        sample.save()
+        file = self.get_object()
+        file.status = Status.REMOVED
+        file.save()
         return Response(
-            {"detail": "Sample deleted successfully"}, status=status.HTTP_204_NO_CONTENT
+            {"detail": "Image deleted successfully"}, status=status.HTTP_204_NO_CONTENT
         )
