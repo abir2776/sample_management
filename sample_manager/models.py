@@ -8,10 +8,15 @@ from .choices import SampleStatus, SampleTypes, SizeType, StorageType, WeightTyp
 
 
 class Project(BaseModelWithUID):
-    company = models.ForeignKey("organization.company", on_delete=models.CASCADE)
+    company = models.ForeignKey("organizations.company", on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     started_at = models.DateTimeField()
     will_finish_at = models.DateTimeField()
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+    )
 
     history = HistoricalRecords()
 

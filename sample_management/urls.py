@@ -56,4 +56,5 @@ urlpatterns = [
     path("api/v1/auth/", include("organizations.rest.urls.register")),
     path("api/v1/organizations/", include("organizations.rest.urls")),
     path("api/v1/sample_manager/", include("sample_manager.rest.urls")),
+    path("api/v1/users/", include("core.rest.urls")),
 ]

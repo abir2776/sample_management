@@ -1,0 +1,68 @@
+from rest_framework import status
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.permissions import OR, IsAuthenticated
+from rest_framework.response import Response
+
+from common.choices import Status
+from organizations.choices import CompanyUserRole
+from sample_manager.models import Project
+from sample_manager.permissions import (
+    IsAdministrator,
+    IsSuperAdmin,
+)
+from sample_manager.rest.serializers.project import ProjectSerializer
+
+
+class ProjectListCreateView(ListCreateAPIView):
+    serializer_class = ProjectSerializer
+
+    def get_queryset(self):
+        role = self.request.user.get_role()
+        company = self.request.user.get_company()
+        if role == CompanyUserRole.SUPER_ADMIN:
+            return Project.objects.filter()
+        return Project.objects.filter(company=company)
+
+    def get_permissions(self):
+        method = self.request.method
+
+        if method == "GET":
+            return [IsAuthenticated()]
+
+        if method == "POST":
+            return [IsSuperAdmin]
+
+        return [IsAuthenticated()]
+
+
+class ProjectDetailView(RetrieveUpdateDestroyAPIView):
+    serializer_class = ProjectSerializer
+    lookup_field = "uid"
+
+    def get_queryset(self):
+        company = self.request.user.get_company()
+        return Project.objects.filter(company=company)
+
+    def get_permissions(self):
+        method = self.request.method
+
+        if method == "GET":
+            return [IsAuthenticated()]
+
+        if method in ["PUT", "PATCH"]:
+            return [IsSuperAdmin]
+
+        if method == "DELETE":
+            return [OR(IsSuperAdmin(), IsAdministrator())]
+
+        return [IsAuthenticated()]
+
+    def delete(self, request, *args, **kwargs):
+        project = self.get_object()
+        project.status = Status.REMOVED
+        project.save()
+
+        return Response(
+            {"detail": "Project deleted successfully"},
+            status=status.HTTP_204_NO_CONTENT,
+        )

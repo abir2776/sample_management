@@ -5,8 +5,8 @@ from rest_framework import serializers
 from versatileimagefield.serializers import VersatileImageFieldSerializer
 
 from core.models import User
-from organizations.choices import OrganizationUserRole
-from organizations.models import Organization, OrganizationUser
+from organizations.choices import CompanyUserRole
+from organizations.models import Company, UserCompany
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ class PublicOrganizationRegistrationSerializer(serializers.Serializer):
             country = validated_data.get("country", None)
             org_description = validated_data.get("org_description", None)
             logo = validated_data.get("logo", None)
-            organization = Organization.objects.create(
+            organization = Company.objects.create(
                 name=org_name,
                 email=email,
                 phone=phone,
@@ -83,10 +83,10 @@ class PublicOrganizationRegistrationSerializer(serializers.Serializer):
                 logo=logo,
             )
             logger.debug(f"Created new user: {user}")
-            OrganizationUser.objects.create(
+            UserCompany.objects.create(
                 user=user,
                 organization=organization,
-                role=OrganizationUserRole.OWNER,
+                role=CompanyUserRole.SUPER_ADMIN,
                 phone=phone,
                 is_active=True,
             )

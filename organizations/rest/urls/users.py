@@ -1,15 +1,15 @@
 from django.urls import path
 
 from organizations.rest.views.users import (
-    OrganizationUserDetailsView,
-    OrganizationUserListCreateView,
+    CompanyUserDetailsView,
+    CompanyUserListCreateView,
 )
 
 urlpatterns = [
-    path("", OrganizationUserListCreateView.as_view(), name="organization-users"),
+    path("", CompanyUserListCreateView.as_view(), name="company-users"),
     path(
         "<uuid:uid>",
-        OrganizationUserDetailsView.as_view(),
-        name="organization-user-details",
+        CompanyUserDetailsView.as_view(),
+        name="company-user-details",
     ),
 ]

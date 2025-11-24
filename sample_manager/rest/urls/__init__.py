@@ -5,5 +5,7 @@ urlpatterns = [
     path("sample/", include("sample_manager.rest.urls.sample")),
     path("storage_file/", include("sample_manager.rest.urls.file")),
     path("buyer/", include("sample_manager.rest.urls.buyer")),
-    path("images/", include("sample_manager.rest.urls.images")),
+    path("images/", include("sample_manager.rest.urls.image")),
+    path("project/", include("sample_manager.rest.urls.project")),
+    path("note/", include("sample_manager.rest.urls.note")),
 ]

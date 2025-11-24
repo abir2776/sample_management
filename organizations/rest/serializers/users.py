@@ -2,16 +2,16 @@ from django.db import transaction
 from rest_framework import serializers
 
 from core.models import User
-from organizations.models import OrganizationUser
+from organizations.models import UserCompany
 
 
-class OrganizationUserSerializer(serializers.ModelSerializer):
+class CompanyUserSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(write_only=True)
     last_name = serializers.CharField(write_only=True)
     password = serializers.CharField(write_only=True)
 
     class Meta:
-        model = OrganizationUser
+        model = UserCompany
         fields = "__all__"
         read_only_fields = [
             "id",
@@ -40,7 +40,7 @@ class OrganizationUserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = self.context["request"].user
-        organization = user.get_organization()
+        company = user.get_company()
 
         first_name = validated_data.pop("first_name")
         last_name = validated_data.pop("last_name")
@@ -57,8 +57,8 @@ class OrganizationUserSerializer(serializers.ModelSerializer):
             )
             new_user.set_password(password)
             new_user.save()
-            organization_user = OrganizationUser.objects.create(
-                organization=organization, user=new_user, **validated_data
+            user_company = UserCompany.objects.create(
+                company=company, user=new_user, **validated_data
             )
 
-        return organization_user
+        return user_company
