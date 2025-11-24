@@ -1,11 +1,13 @@
 from django.db import transaction
 from rest_framework import serializers
 
-from common.serializers import ImageSlimSerializer
+from common.serializers import BuyerSlimSerializer, ImageSlimSerializer
 from organizations.models import Company
 from sample_manager.models import (
+    Buyer,
     Image,
     Project,
+    ProjectBuyerConnection,
     ProjectImage,
 )
 
@@ -19,7 +21,15 @@ class ProjectSerializer(serializers.ModelSerializer):
         allow_empty=True,
         required=False,
     )
+    buyer_uids = serializers.ListField(
+        child=serializers.CharField(),
+        write_only=True,
+        max_length=3,
+        allow_empty=True,
+        required=False,
+    )
     images = serializers.SerializerMethodField()
+    buyers = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
@@ -35,6 +45,8 @@ class ProjectSerializer(serializers.ModelSerializer):
             "company_uid",
             "image_uids",
             "images",
+            "buyer_uids",
+            "buyer",
         ]
         read_only_fields = ["id", "uid", "created_at", "updated_at", "company"]
 
@@ -45,10 +57,18 @@ class ProjectSerializer(serializers.ModelSerializer):
         images = Image.objects.filter(id__in=image_ids)
         return ImageSlimSerializer(images, many=True).data
 
+    def get_buyers(self, obj):
+        buyer_ids = ProjectBuyerConnection.objects.filter(porject=obj).values_list(
+            "buyer_id", flat=True
+        )
+        buyers = Buyer.objects.filter(id__in=buyer_ids)
+        return BuyerSlimSerializer(buyers, many=True).data
+
     @transaction.atomic
     def create(self, validated_data):
         company_uid = validated_data.pop("company_uid")
         image_uids = validated_data.pop("image_uids", [])
+        buyer_uids = validated_data.pop("buyer_uids", [])
 
         company = Company.objects.filter(uid=company_uid).first()
         if company == None:
@@ -63,12 +83,21 @@ class ProjectSerializer(serializers.ModelSerializer):
             ProjectImage.objects.bulk_create(
                 [ProjectImage(project=project, image=img) for img in images]
             )
+        if buyer_uids:
+            buyers = Buyer.objects.filter(uid__in=buyer_uids)
+            ProjectBuyerConnection.objects.bulk_create(
+                [
+                    ProjectBuyerConnection(project=project, buyer=buyer)
+                    for buyer in buyers
+                ]
+            )
 
         return project
 
     @transaction.atomic
     def update(self, instance, validated_data):
         image_uids = validated_data.pop("image_uids", None)
+        buyer_uids = validated_data.pop("buyer_uids", None)
         company_uid = validated_data.pop("company_uid")
         company = Company.objects.filter(uid=company_uid).first()
         if company == None:
@@ -83,6 +112,15 @@ class ProjectSerializer(serializers.ModelSerializer):
             images = Image.objects.filter(uid__in=image_uids)
             ProjectImage.objects.bulk_create(
                 [ProjectImage(project=instance, image=img) for img in images]
+            )
+        if buyer_uids is not None:
+            ProjectBuyerConnection.objects.filter(project=instance).delete()
+            buyers = Buyer.objects.filter(uid__in=buyer_uids)
+            ProjectBuyerConnection.objects.bulk_create(
+                [
+                    ProjectBuyerConnection(project=instance, buyer=buyer)
+                    for buyer in buyers
+                ]
             )
 
         return instance
