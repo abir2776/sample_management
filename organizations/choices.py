@@ -22,3 +22,8 @@ class DomainPlatformChoices(models.TextChoices):
     NAME_DOT_COM = "NAME_DOT_COM", "Name_dot_com"
     GOOGLE = "GOOGLE", "Google"
     OTHERS = "OTHERS", "Others"
+
+
+class ActivityType(models.TextChoices):
+    LOGIN = "LOGIN", "Login"
+    LOGOUT = "LOGOUT", "Logout"

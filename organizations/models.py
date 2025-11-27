@@ -1,5 +1,3 @@
-import uuid
-
 from django.db import models
 from django.utils import timezone
 
@@ -7,7 +5,7 @@ from common.choices import Status
 from common.models import BaseModelWithUID
 from core.models import User
 
-from .choices import CompanyUserRole, DomainPlatformChoices
+from .choices import ActivityType, CompanyUserRole, DomainPlatformChoices
 
 
 class Company(BaseModelWithUID):
@@ -79,3 +77,16 @@ class UserCompany(BaseModelWithUID):
     def update_last_active(self):
         self.last_active = timezone.now()
         self.save()
+
+
+class ActivityLog(BaseModelWithUID):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    type = models.CharField(
+        max_length=20,
+        choices=ActivityType.choices,
+        default=ActivityType.LOGIN,
+    )
+
+    def __str__(self):
+        return f"{self.user.get_name}-{self.type}"
