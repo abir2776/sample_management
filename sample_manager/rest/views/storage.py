@@ -4,6 +4,7 @@ from rest_framework.permissions import OR, IsAuthenticated
 from rest_framework.response import Response
 
 from common.choices import Status
+from organizations.choices import CompanyUserRole
 from sample_manager.models import Storage
 from sample_manager.permissions import (
     IsAccountant,
@@ -20,6 +21,9 @@ class StorageListCreateView(ListCreateAPIView):
 
     def get_queryset(self):
         company = self.request.user.get_company()
+        role = self.request.user.get_role()
+        if role == CompanyUserRole.SUPER_ADMIN:
+            return Storage.objects.filter()
         return Storage.objects.filter(company=company)
 
     def get_permissions(self):

@@ -66,29 +66,13 @@ class PublicOrganizationRegistrationSerializer(serializers.Serializer):
             org_name = validated_data["org_name"]
             if len(org_name) == 0:
                 org_name = f"{first_name} {last_name}"
-
-            org_website = validated_data.get("org_website", None)
-            address = validated_data.get("address", None)
-            country = validated_data.get("country", None)
-            org_description = validated_data.get("org_description", None)
-            logo = validated_data.get("logo", None)
-            organization = Company.objects.create(
-                name=org_name,
-                email=email,
-                phone=phone,
-                website=org_website,
-                address=address,
-                country=country,
-                description=org_description,
-                logo=logo,
-            )
+            company = Company.objects.create(name=org_name)
             logger.debug(f"Created new user: {user}")
             UserCompany.objects.create(
                 user=user,
-                organization=organization,
+                company=company,
                 role=CompanyUserRole.SUPER_ADMIN,
-                phone=phone,
                 is_active=True,
             )
-            logger.debug(f"Added user: {user} to organization: {organization}")
+            logger.debug(f"Added user: {user} to company: {company}")
         return user

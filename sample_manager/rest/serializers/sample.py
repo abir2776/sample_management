@@ -148,7 +148,6 @@ class SampleSerializer(serializers.ModelSerializer):
             company=company,
             **validated_data,
         )
-
         # Images
         images = Image.objects.filter(uid__in=image_uids)
         SampleImage.objects.bulk_create(
@@ -195,7 +194,6 @@ class SampleSerializer(serializers.ModelSerializer):
                     "No storage found with this given uid"
                 )
             instance.storage = storage
-
         instance.save()
 
         # Update images

@@ -105,7 +105,6 @@ class ProjectSerializer(serializers.ModelSerializer):
         instance.company = company
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-
         instance.save()
         if image_uids is not None:
             ProjectImage.objects.filter(project=instance).delete()

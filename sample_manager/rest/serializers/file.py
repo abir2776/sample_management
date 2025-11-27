@@ -135,7 +135,6 @@ class StorageFileSerializer(serializers.ModelSerializer):
             if storage is None:
                 raise serializers.ValidationError("No storage found with given uid")
             instance.storage = storage
-
         instance.save()
         if image_uids is not None:
             FileImage.objects.filter(file=instance).delete()

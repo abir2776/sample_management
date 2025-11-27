@@ -26,13 +26,10 @@ class StorageSerializer(serializers.ModelSerializer):
         bucket = Storage.objects.create(
             created_by=user, company=company, parent=parent, **validated_data
         )
-        bucket.history._history_user = user
-        bucket.save()
         return bucket
 
     def update(self, instance, validated_data):
         parent_uid = validated_data.pop("parent_uid", None)
-        user = self.context["request"].user
         if parent_uid:
             parent = Storage.objects.filter(uid=parent_uid).first()
             if parent is None:
@@ -44,8 +41,6 @@ class StorageSerializer(serializers.ModelSerializer):
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-
-        instance.history._history_user = user
         instance.save()
 
         return instance
