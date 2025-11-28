@@ -2,6 +2,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from common.serializers import ImageSlimSerializer
+from sample_manager.choices import StorageType
 from sample_manager.models import (
     File,
     FileImage,
@@ -101,7 +102,9 @@ class StorageFileSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         company = user.get_company()
 
-        storage = Storage.objects.filter(uid=storage_uid).first()
+        storage = Storage.objects.filter(
+            uid=storage_uid, type=StorageType.DRAWER
+        ).first()
         if storage is None:
             raise serializers.ValidationError("No storage found with given uid")
 
@@ -131,7 +134,9 @@ class StorageFileSerializer(serializers.ModelSerializer):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         if storage_uid:
-            storage = Storage.objects.filter(uid=storage_uid).first()
+            storage = Storage.objects.filter(
+                uid=storage_uid, type=StorageType.DRAWER
+            ).first()
             if storage is None:
                 raise serializers.ValidationError("No storage found with given uid")
             instance.storage = storage
