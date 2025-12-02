@@ -1,18 +1,22 @@
 from rest_framework import status
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from rest_framework.permissions import IsAuthenticated, OR
+from rest_framework.permissions import OR, IsAuthenticated
 from rest_framework.response import Response
 
 from common.choices import Status
+from organizations.choices import CompanyUserRole
 from sample_manager.models import Buyer
-from sample_manager.permissions import IsSuperAdmin, IsAdministrator
-from sample_manager.rest.serializers.buyer import BuyerSerializer
+from sample_manager.permissions import IsAdministrator, IsSuperAdmin
+from sample_manager.rest.serializers.buyer import AdminBuyerSerializer, BuyerSerializer
 
 
 class BuyerListCreateView(ListCreateAPIView):
     serializer_class = BuyerSerializer
 
     def get_queryset(self):
+        role = self.request.user.get_role()
+        if role == CompanyUserRole.SUPER_ADMIN:
+            return Buyer.objects.all()
         company = self.request.user.get_company()
         return Buyer.objects.filter(company=company)
 
@@ -26,6 +30,14 @@ class BuyerListCreateView(ListCreateAPIView):
             return [IsSuperAdmin()]
 
         return [IsAuthenticated()]
+
+    def get_serializer_class(self):
+        role = self.request.user.get_role()
+
+        if role == CompanyUserRole.SUPER_ADMIN:
+            return AdminBuyerSerializer
+
+        return BuyerSerializer
 
 
 class BuyerDetailView(RetrieveUpdateDestroyAPIView):

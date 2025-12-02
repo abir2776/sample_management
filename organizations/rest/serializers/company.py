@@ -12,19 +12,19 @@ class CompanySerializer(serializers.ModelSerializer):
 
 
 class CompanyAddUserSerializer(serializers.Serializer):
-    company_uid = serializers.CharField()
-    user_uid = serializers.CharField()
-    role = serializers.CharField()
+    company_uid = serializers.CharField(write_only=True)
+    user_id = serializers.CharField(write_only=True)
+    role = serializers.CharField(write_only=True)
 
     def create(self, validated_data):
         company_uid = validated_data.pop("company_uid")
-        user_uid = validated_data.pop("user_uid")
+        user_id = validated_data.pop("user_id")
         role = validated_data.pop("role")
         company = Company.objects.filter(uid=company_uid).first()
         if company == None:
             raise serializers.ValidationError("Invalid Company uid")
-        user = User.objects.filter(uid=user_uid).first()
+        user = User.objects.filter(id=user_id).first()
         if user == None:
             raise serializers.ValidationError("Invalid User uid")
-        UserCompany.objects.create(user=user, company=company, role=role)
-        return super().create(validated_data)
+        company_user = UserCompany.objects.create(user=user, company=company, role=role)
+        return company_user

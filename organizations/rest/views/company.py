@@ -1,14 +1,16 @@
 from django.db import transaction
 from rest_framework import status
-from rest_framework.generics import ListCreateAPIView, CreateAPIView
+from rest_framework.generics import ListCreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from core.models import User
+from organizations.choices import CompanyUserRole
 from organizations.models import Company, UserCompany
 from organizations.rest.serializers.company import (
-    CompanySerializer,
     CompanyAddUserSerializer,
+    CompanySerializer,
 )
 from sample_manager.permissions import IsSuperAdmin
 
@@ -18,8 +20,11 @@ class MyCompanyListCreate(ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
+        role = user.get_role()
+        if role == CompanyUserRole.SUPER_ADMIN:
+            return Company.objects.filter()
         company_ids = UserCompany.objects.filter(user=user).values_list(
-            "organization_id", flat=True
+            "company_id", flat=True
         )
         companys = Company.objects.filter(id__in=company_ids)
         return companys
@@ -31,7 +36,7 @@ class MyCompanyListCreate(ListCreateAPIView):
             return [IsAuthenticated()]
 
         if method == "POST":
-            return [IsSuperAdmin]
+            return [IsSuperAdmin()]
 
         return [IsAuthenticated()]
 
@@ -69,6 +74,7 @@ class SwitchCompanyAPIView(APIView):
         )
 
 
-class CompanyAddUserView(CreateAPIView):
+class CompanyAddUserView(ListCreateAPIView):
     permission_classes = [IsSuperAdmin]
     serializer_class = CompanyAddUserSerializer
+    queryset = User.objects.filter()

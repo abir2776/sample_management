@@ -1,4 +1,8 @@
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import (
+    ListCreateAPIView,
+    RetrieveAPIView,
+    RetrieveUpdateDestroyAPIView,
+)
 
 from core.models import User
 from core.rest.serializers.users import UserSerializer
@@ -16,3 +20,10 @@ class UserDetailView(RetrieveUpdateDestroyAPIView):
     serializer_class = UserSerializer
     queryset = User.objects.filter()
     lookup_field = "uid"
+
+
+class UserProfileView(RetrieveAPIView):
+    serializer_class = UserSerializer
+
+    def get_object(self):
+        return self.request.user

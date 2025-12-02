@@ -82,3 +82,6 @@ class User(AbstractUser, BaseModelWithUID):
 
     def get_role(self):
         return self.company_profile.filter(is_active=True).first().role
+
+    def get_company_user(self):
+        return self.company_profile.filter(is_active=True).first()

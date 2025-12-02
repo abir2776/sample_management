@@ -1,3 +1,4 @@
+from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.utils import timezone
 
@@ -43,6 +44,7 @@ class UserCompany(BaseModelWithUID):
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="company_profile"
     )
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
     role = models.CharField(
         max_length=20, choices=CompanyUserRole, default=CompanyUserRole.STAFF
     )
@@ -77,6 +79,18 @@ class UserCompany(BaseModelWithUID):
     def update_last_active(self):
         self.last_active = timezone.now()
         self.save()
+
+    def can_manage_user(self, target_user_role):
+        temp = CompanyUserRole.can_manage(self.role, target_user_role)
+        print(temp)
+        return temp
+
+    def validate_role_permission(self, target_user_role, action="manage"):
+        if not self.can_manage_user(target_user_role):
+            raise PermissionDenied(
+                f"Users with role '{self.role}' cannot {action} "
+                f"users with role '{target_user_role}' or higher."
+            )
 
 
 class ActivityLog(BaseModelWithUID):

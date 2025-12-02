@@ -70,6 +70,7 @@ class PublicOrganizationRegistrationSerializer(serializers.Serializer):
             logger.debug(f"Created new user: {user}")
             UserCompany.objects.create(
                 user=user,
+                created_by=user,
                 company=company,
                 role=CompanyUserRole.SUPER_ADMIN,
                 is_active=True,
