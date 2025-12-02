@@ -27,7 +27,7 @@ class BuyerListCreateView(ListCreateAPIView):
             return [IsAuthenticated()]
 
         if method == "POST":
-            return [IsSuperAdmin()]
+            return [OR(IsSuperAdmin(), IsAdministrator())]
 
         return [IsAuthenticated()]
 
@@ -54,7 +54,7 @@ class BuyerDetailView(RetrieveUpdateDestroyAPIView):
             return [OR(IsSuperAdmin(), IsAdministrator())]
 
         if method == "DELETE":
-            return [IsSuperAdmin()]
+            return [OR(IsSuperAdmin(), IsAdministrator())]
 
         return [IsAuthenticated()]
 

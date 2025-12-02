@@ -3,22 +3,21 @@ from rest_framework.generics import (
     ListCreateAPIView,
     RetrieveUpdateDestroyAPIView,
 )
-from rest_framework.permissions import OR, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from common.choices import Status
 from core.models import User
 from organizations.choices import CompanyUserRole
 from organizations.models import UserCompany
 from organizations.rest.serializers.users import (
     AdminUserCreateSerializer,
+    AdminUserDetailsSerializer,
     AdminUserListSerializer,
     CompanyUserSerializer,
 )
 from sample_manager.permissions import (
-    IsAccountant,
     IsAdministrator,
-    IsManager,
-    IsMerchandiser,
     IsSuperAdmin,
 )
 
@@ -30,8 +29,8 @@ class CompanyUserListCreateView(ListCreateAPIView):
         company = self.request.user.get_company()
         role = self.request.user.get_role()
         if role == CompanyUserRole.SUPER_ADMIN:
-            return UserCompany.objects.filter()
-        queryset = UserCompany.objects.filter(company=company)
+            return UserCompany.objects.filter(status=Status.ACTIVE)
+        queryset = UserCompany.objects.filter(company=company, status=Status.ACTIVE)
         return queryset
 
     def get_permissions(self):
@@ -41,22 +40,14 @@ class CompanyUserListCreateView(ListCreateAPIView):
             return [IsAuthenticated()]
 
         if method == "POST":
-            return [
-                OR(
-                    IsAdministrator(),
-                    OR(
-                        IsAccountant(),
-                        OR(IsManager(), IsMerchandiser()),
-                    ),
-                )
-            ]
+            return [IsAdministrator()]
 
         return [IsAuthenticated()]
 
 
 class CompanyUserDetailsView(RetrieveUpdateDestroyAPIView):
     serializer_class = CompanyUserSerializer
-    queryset = UserCompany.objects.filter()
+    queryset = UserCompany.objects.filter(status=Status.ACTIVE)
     lookup_field = "uid"
 
     def get_permissions(self):
@@ -66,17 +57,19 @@ class CompanyUserDetailsView(RetrieveUpdateDestroyAPIView):
             return [IsAuthenticated()]
 
         if method == "PUT" or method == "PATCH":
-            return [
-                OR(
-                    IsAdministrator(),
-                    OR(
-                        IsAccountant(),
-                        OR(IsManager(), IsMerchandiser()),
-                    ),
-                )
-            ]
+            return [IsAdministrator()]
 
         return [IsAuthenticated()]
+
+    def delete(self, request, *args, **kwargs):
+        company_user = self.get_object()
+        company_user.status = Status.REMOVED
+        company_user.save()
+        company_user.user.is_active = False
+        company_user.user.save()
+        return Response(
+            {"detail": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT
+        )
 
 
 class AdminUserView(ListCreateAPIView):
@@ -97,3 +90,10 @@ class AdminUserView(ListCreateAPIView):
         user = serializer.save()
         output_serializer = AdminUserListSerializer(user)
         return Response(output_serializer.data, status=status.HTTP_201_CREATED)
+
+
+class AdminUserDetailView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsSuperAdmin]
+    queryset = User.objects.all()
+    serializer_class = AdminUserDetailsSerializer
+    lookup_field = "id"

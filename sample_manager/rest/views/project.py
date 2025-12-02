@@ -30,7 +30,7 @@ class ProjectListCreateView(ListCreateAPIView):
             return [IsAuthenticated()]
 
         if method == "POST":
-            return [IsSuperAdmin]
+            return [OR(IsSuperAdmin(), IsAdministrator())]
 
         return [IsAuthenticated()]
 
@@ -50,7 +50,7 @@ class ProjectDetailView(RetrieveUpdateDestroyAPIView):
             return [IsAuthenticated()]
 
         if method in ["PUT", "PATCH"]:
-            return [IsSuperAdmin]
+            return [OR(IsSuperAdmin(), IsAdministrator())]
 
         if method == "DELETE":
             return [OR(IsSuperAdmin(), IsAdministrator())]

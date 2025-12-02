@@ -76,6 +76,22 @@ class CompanyUserSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         company_user = user.get_company_user()
         role = validated_data.get("role")
+        first_name = validated_data.pop("first_name", None)
+        if first_name:
+            instance.user.first_name = first_name
+        last_name = validated_data.pop("last_name", None)
+        if last_name:
+            instance.user.last_name = last_name
+        email = validated_data.pop("email", None)
+        if email:
+            instance.user.email = email
+        phone = validated_data.pop("phone")
+        if phone:
+            instance.user.phone = phone
+        password = validated_data.pop("password")
+        if password:
+            instance.user.set_password(password)
+        instance.user.save()
         company_user.validate_role_permission(role)
         return super().update(instance, validated_data)
 
@@ -135,3 +151,16 @@ class AdminUserCreateSerializer(serializers.Serializer):
             )
 
         return new_user
+
+
+class AdminUserDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name", "email", "phone", "password"]
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop("password", None)
+        if password:
+            instance.set_password(password)
+        instance.save()
+        return super().update(instance, validated_data)

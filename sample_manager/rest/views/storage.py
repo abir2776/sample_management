@@ -1,4 +1,6 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
+from rest_framework.filters import SearchFilter
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import OR, IsAuthenticated
 from rest_framework.response import Response
@@ -18,6 +20,9 @@ from sample_manager.rest.serializers.storage import StorageSerializer
 
 class StorageListCreateView(ListCreateAPIView):
     serializer_class = StorageSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ["type"]
+    search_fields = ["name"]
 
     def get_queryset(self):
         company = self.request.user.get_company()
