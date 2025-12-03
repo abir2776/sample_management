@@ -6,10 +6,7 @@ from rest_framework.response import Response
 from common.choices import Status
 from sample_manager.models import File
 from sample_manager.permissions import (
-    IsAccountant,
     IsAdministrator,
-    IsManager,
-    IsMerchandiser,
     IsSuperAdmin,
 )
 from sample_manager.rest.serializers.file import StorageFileSerializer
@@ -20,8 +17,10 @@ class StorageFileListCreateView(ListCreateAPIView):
 
     def get_queryset(self):
         storage_uid = self.kwargs.get("storage_uid")
-        company = self.request.user.get_organization()
-        return File.objects.filter(company=company, storage__uid=storage_uid)
+        company = self.request.user.get_company()
+        return File.objects.filter(
+            company=company, storage__uid=storage_uid, is_active=True
+        )
 
     def get_permissions(self):
         method = self.request.method
@@ -30,15 +29,7 @@ class StorageFileListCreateView(ListCreateAPIView):
             return [IsAuthenticated()]
 
         if method == "POST":
-            return [
-                OR(
-                    IsAdministrator(),
-                    OR(
-                        IsAccountant(),
-                        OR(IsSuperAdmin(), OR(IsManager(), IsMerchandiser())),
-                    ),
-                )
-            ]
+            return [IsAuthenticated()]
 
         return [IsAuthenticated()]
 
@@ -54,15 +45,7 @@ class StorageFileDetailView(RetrieveUpdateDestroyAPIView):
             return [IsAuthenticated()]
 
         if method in ["PUT", "PATCH"]:
-            return [
-                OR(
-                    IsAdministrator(),
-                    OR(
-                        IsAccountant(),
-                        OR(IsSuperAdmin(), OR(IsManager(), IsMerchandiser())),
-                    ),
-                )
-            ]
+            return [IsAuthenticated()]
 
         if method == "DELETE":
             return [OR(IsSuperAdmin, IsAdministrator())]
@@ -71,8 +54,10 @@ class StorageFileDetailView(RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         storage_uid = self.kwargs.get("storage_uid")
-        company = self.request.user.get_organization()
-        return File.objects.filter(company=company, storage__uid=storage_uid)
+        company = self.request.user.get_company()
+        return File.objects.filter(
+            company=company, storage__uid=storage_uid, is_active=True
+        )
 
     def delete(self, request, *args, **kwargs):
         file = self.get_object()

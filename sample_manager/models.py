@@ -4,7 +4,15 @@ from simple_history.models import HistoricalRecords
 from common.choices import Status
 from common.models import BaseModelWithUID
 
-from .choices import SampleStatus, SampleTypes, SizeType, StorageType, WeightType
+from .choices import (
+    ActionTypes,
+    ModifyRequestStatus,
+    SampleStatus,
+    SampleTypes,
+    SizeType,
+    StorageType,
+    WeightType,
+)
 
 
 class Project(BaseModelWithUID):
@@ -85,6 +93,7 @@ class GarmentSample(BaseModelWithUID):
         choices=SampleStatus.choices,
         default=SampleStatus.ACTIVE,
     )
+    is_active = models.BooleanField(default=True)
     history = HistoricalRecords()
 
     def __str__(self):
@@ -103,6 +112,7 @@ class File(BaseModelWithUID):
         choices=Status.choices,
         default=Status.ACTIVE,
     )
+    is_active = models.BooleanField(default=True)
     history = HistoricalRecords()
 
     def __str__(self):
@@ -313,3 +323,29 @@ class ProjectFile(BaseModelWithUID):
 
     def __str__(self):
         return f"{self.project.name}-{self.file.name}"
+
+
+class ModifyRequest(BaseModelWithUID):
+    requested_user = models.ForeignKey(
+        "core.User", on_delete=models.CASCADE, related_name="requests"
+    )
+    responded_user = models.ForeignKey(
+        "core.User", on_delete=models.SET_NULL, null=True, blank=True
+    )
+    company = models.ForeignKey("organizations.Company", on_delete=models.CASCADE)
+    storage = models.ForeignKey(Storage, on_delete=models.CASCADE)
+    sample = models.ForeignKey(
+        GarmentSample, on_delete=models.CASCADE, null=True, blank=True
+    )
+    file = models.ForeignKey(File, on_delete=models.CASCADE, null=True, blank=True)
+    requested_from = models.CharField(max_length=20, choices=StorageType.choices)
+    requested_action = models.CharField(max_length=20, choices=ActionTypes.choices)
+    status = models.CharField(
+        max_length=20,
+        choices=ModifyRequestStatus.choices,
+        default=ModifyRequestStatus.PENDING,
+    )
+    requested_data = models.JSONField()
+
+    def __str__(self):
+        return f"{self.requested_user.first_name}-{self.requested_from}-{self.status}"

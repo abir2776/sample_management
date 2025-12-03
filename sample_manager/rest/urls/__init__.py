@@ -8,4 +8,5 @@ urlpatterns = [
     path("images/", include("sample_manager.rest.urls.image")),
     path("project/", include("sample_manager.rest.urls.project")),
     path("note/", include("sample_manager.rest.urls.note")),
+    path("requests/", include("sample_manager.rest.urls.requests")),
 ]

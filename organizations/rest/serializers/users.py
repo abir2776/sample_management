@@ -2,6 +2,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from core.models import User
+from core.rest.serializers.users import UserSerializer
 from organizations.models import Company, UserCompany
 
 
@@ -11,6 +12,7 @@ class CompanyUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     email = serializers.CharField(write_only=True)
     phone = serializers.CharField(write_only=True)
+    user = UserSerializer(read_only=True)
 
     class Meta:
         model = UserCompany
@@ -18,7 +20,6 @@ class CompanyUserSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "id",
             "uid",
-            "organization",
             "first_name",
             "last_name",
             "password",
@@ -76,6 +77,10 @@ class CompanyUserSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         company_user = user.get_company_user()
         role = validated_data.get("role")
+
+        if instance.user.id != user.id:
+            company_user.validate_role_permission(role)
+
         first_name = validated_data.pop("first_name", None)
         if first_name:
             instance.user.first_name = first_name
@@ -92,7 +97,6 @@ class CompanyUserSerializer(serializers.ModelSerializer):
         if password:
             instance.user.set_password(password)
         instance.user.save()
-        company_user.validate_role_permission(role)
         return super().update(instance, validated_data)
 
 

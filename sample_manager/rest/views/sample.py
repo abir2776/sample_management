@@ -6,10 +6,7 @@ from rest_framework.response import Response
 from common.choices import Status
 from sample_manager.models import GarmentSample
 from sample_manager.permissions import (
-    IsAccountant,
     IsAdministrator,
-    IsManager,
-    IsMerchandiser,
     IsSuperAdmin,
 )
 from sample_manager.rest.serializers.sample import SampleSerializer
@@ -21,7 +18,9 @@ class SampleListCreateView(ListCreateAPIView):
     def get_queryset(self):
         storage_uid = self.kwargs.get("storage_uid")
         company = self.request.user.get_company()
-        return GarmentSample.objects.filter(company=company, storage__uid=storage_uid)
+        return GarmentSample.objects.filter(
+            company=company, storage__uid=storage_uid, is_active=True
+        )
 
     def get_permissions(self):
         method = self.request.method
@@ -30,15 +29,7 @@ class SampleListCreateView(ListCreateAPIView):
             return [IsAuthenticated()]
 
         if method == "POST":
-            return [
-                OR(
-                    IsAdministrator(),
-                    OR(
-                        IsAccountant(),
-                        OR(IsSuperAdmin(), OR(IsManager(), IsMerchandiser())),
-                    ),
-                )
-            ]
+            return [IsAuthenticated()]
 
         return [IsAuthenticated()]
 
@@ -54,15 +45,7 @@ class SampleDetailView(RetrieveUpdateDestroyAPIView):
             return [IsAuthenticated()]
 
         if method in ["PUT", "PATCH"]:
-            return [
-                OR(
-                    IsAdministrator(),
-                    OR(
-                        IsAccountant(),
-                        OR(IsSuperAdmin(), OR(IsManager(), IsMerchandiser())),
-                    ),
-                )
-            ]
+            return [IsAuthenticated()]
 
         if method == "DELETE":
             return [OR(IsSuperAdmin, IsAdministrator())]
@@ -72,7 +55,9 @@ class SampleDetailView(RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         storage_uid = self.kwargs.get("storage_uid")
         company = self.request.user.get_company()
-        return GarmentSample.objects.filter(company=company, storage__uid=storage_uid)
+        return GarmentSample.objects.filter(
+            company=company, storage__uid=storage_uid, is_active=True
+        )
 
     def delete(self, request, *args, **kwargs):
         sample = self.get_object()

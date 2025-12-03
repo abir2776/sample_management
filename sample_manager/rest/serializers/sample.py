@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import transaction
 from rest_framework import serializers
 
@@ -7,11 +9,13 @@ from common.serializers import (
     NoteSlimSerializer,
     ProjectSlimSerializer,
 )
-from sample_manager.choices import StorageType
+from organizations.choices import CompanyUserRole
+from sample_manager.choices import ActionTypes, StorageType
 from sample_manager.models import (
     Buyer,
     GarmentSample,
     Image,
+    ModifyRequest,
     Note,
     Project,
     ProjectSample,
@@ -73,9 +77,9 @@ class SampleSerializer(serializers.ModelSerializer):
             "types",
             "color",
             "size",
-            "type",
+            "types",
             "comments",
-            "organization",
+            "company",
             "name",
             "description",
             "status",
@@ -86,43 +90,82 @@ class SampleSerializer(serializers.ModelSerializer):
             "buyers",
             "project_uids",
             "projects",
+            "note_uids",
+            "notes",
         ]
         read_only_fields = [
             "bucket",
             "id",
             "uid",
             "created_by",
-            "organization",
+            "company",
             "status",
+            "storage",
         ]
 
-    def get_files(self, obj):
+    def get_images(self, obj):
         image_ids = SampleImage.objects.filter(sample=obj).values_list(
-            "file_id", flat=True
+            "image_id", flat=True
         )
         images = Image.objects.filter(id__in=image_ids)
-        return ImageSlimSerializer(images, many=True).data
+        return ImageSlimSerializer(
+            images, many=True, context={"request": self.context["request"]}
+        ).data
 
     def get_buyers(self, obj):
         buyer_ids = SampleBuyerConnection.objects.filter(sample=obj).values_list(
-            "id", flat=True
+            "buyer_id", flat=True
         )
         buyers = Buyer.objects.filter(id__in=buyer_ids)
-        return BuyerSlimSerializer(buyers, many=True).data
+        return BuyerSlimSerializer(
+            buyers, many=True, context={"request": self.context["request"]}
+        ).data
 
     def get_projects(self, obj):
         project_ids = ProjectSample.objects.filter(sample=obj).values_list(
             "project_id", flat=True
         )
         projects = Project.objects.filter(id__in=project_ids)
-        return ProjectSlimSerializer(projects, many=True).data
+        return ProjectSlimSerializer(
+            projects, many=True, context={"request": self.context["request"]}
+        ).data
 
     def get_notes(self, obj):
         note_ids = SampleNote.objects.filter(sample=obj).values_list(
             "note_id", flat=True
         )
-        notes = Note.objects.filter(id__in=note_ids)
-        return NoteSlimSerializer(notes, many=True).data
+        notes = Note.objects.filter(
+            id__in=note_ids,
+        )
+        return NoteSlimSerializer(
+            notes, many=True, context={"request": self.context["request"]}
+        ).data
+
+    def _prepare_request_data(
+        self,
+        validated_data,
+        storage_uid,
+        image_uids,
+        buyer_uids,
+        project_uids,
+        note_uids,
+    ):
+        """Helper method to prepare JSON serializable request data"""
+        request_data = {}
+        for key, value in validated_data.items():
+            if hasattr(value, "isoformat"):
+                request_data[key] = value.isoformat()
+            elif isinstance(value, Decimal):
+                request_data[key] = float(value)
+            else:
+                request_data[key] = value
+        request_data["storage_uid"] = storage_uid
+        request_data["image_uids"] = image_uids
+        request_data["buyer_uids"] = buyer_uids
+        request_data["project_uids"] = project_uids
+        request_data["note_uids"] = note_uids
+
+        return request_data
 
     @transaction.atomic
     def create(self, validated_data):
@@ -134,43 +177,56 @@ class SampleSerializer(serializers.ModelSerializer):
 
         user = self.context["request"].user
         company = user.get_company()
+        images = Image.objects.filter(uid__in=image_uids)
+        buyers = Buyer.objects.filter(uid__in=buyer_uids)
+        projects = Project.objects.filter(uid__in=project_uids)
+        notes = Note.objects.filter(uid__in=note_uids)
 
         storage = Storage.objects.filter(
             uid=storage_uid, type=StorageType.SPACE
         ).first()
         if storage is None:
             raise serializers.ValidationError("No Storage found with this given uid")
+        if user.get_role() == CompanyUserRole.STAFF:
+            validated_data["is_active"] = False
 
-        # Main sample creation
         sample = GarmentSample.objects.create(
             storage=storage,
             created_by=user,
             company=company,
             **validated_data,
         )
-        # Images
-        images = Image.objects.filter(uid__in=image_uids)
         SampleImage.objects.bulk_create(
             [SampleImage(sample=sample, image=img) for img in images]
         )
-
-        # Buyers
-        buyers = Buyer.objects.filter(uid__in=buyer_uids)
         SampleBuyerConnection.objects.bulk_create(
             [SampleBuyerConnection(sample=sample, buyer=buyer) for buyer in buyers]
         )
-
-        # Projects
-        projects = Project.objects.filter(uid__in=project_uids)
         ProjectSample.objects.bulk_create(
             [ProjectSample(sample=sample, project=project) for project in projects]
         )
-
-        # Notes
-        notes = Note.objects.filter(uid__in=note_uids)
         SampleNote.objects.bulk_create(
             [SampleNote(sample=sample, note=note) for note in notes]
         )
+        if user.get_role() == CompanyUserRole.STAFF:
+            request_data = self._prepare_request_data(
+                validated_data,
+                storage_uid,
+                image_uids,
+                buyer_uids,
+                project_uids,
+                note_uids,
+            )
+
+            ModifyRequest.objects.create(
+                requested_user=user,
+                company=company,
+                sample=sample,
+                requested_from=StorageType.SPACE,
+                requested_action=ActionTypes.CREATE,
+                requested_data=request_data,
+                storage=storage,
+            )
 
         return sample
 
@@ -182,11 +238,64 @@ class SampleSerializer(serializers.ModelSerializer):
         project_uids = validated_data.pop("project_uids", None)
         note_uids = validated_data.pop("note_uids", None)
 
-        # Update primitive fields
+        user = self.context["request"].user
+        company = user.get_company()
+        if user.get_role() == CompanyUserRole.STAFF:
+            update_data = validated_data.copy()
+
+            request_data = self._prepare_request_data(
+                update_data,
+                storage_uid if storage_uid else instance.storage.uid,
+                image_uids
+                if image_uids is not None
+                else list(
+                    Image.objects.filter(
+                        id__in=SampleImage.objects.filter(sample=instance).values_list(
+                            "image_id", flat=True
+                        )
+                    ).values_list("uid", flat=True)
+                ),
+                buyer_uids
+                if buyer_uids is not None
+                else list(
+                    Buyer.objects.filter(
+                        id__in=SampleBuyerConnection.objects.filter(
+                            sample=instance
+                        ).values_list("buyer_id", flat=True)
+                    ).values_list("uid", flat=True)
+                ),
+                project_uids
+                if project_uids is not None
+                else list(
+                    Project.objects.filter(
+                        id__in=ProjectSample.objects.filter(
+                            sample=instance
+                        ).values_list("project_id", flat=True)
+                    ).values_list("uid", flat=True)
+                ),
+                note_uids
+                if note_uids is not None
+                else list(
+                    Note.objects.filter(
+                        id__in=SampleNote.objects.filter(sample=instance).values_list(
+                            "note_id", flat=True
+                        )
+                    ).values_list("uid", flat=True)
+                ),
+            )
+
+            ModifyRequest.objects.create(
+                requested_user=user,
+                company=company,
+                sample=instance,
+                requested_from=StorageType.SPACE,
+                requested_action=ActionTypes.UPDATE,
+                requested_data=request_data,
+                storage=instance.storage,
+            )
+            return instance
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-
-        # Update storage
         if storage_uid:
             storage = Storage.objects.filter(uid=storage_uid).first()
             if storage is None:
@@ -195,16 +304,12 @@ class SampleSerializer(serializers.ModelSerializer):
                 )
             instance.storage = storage
         instance.save()
-
-        # Update images
         if image_uids is not None:
             SampleImage.objects.filter(sample=instance).delete()
             images = Image.objects.filter(uid__in=image_uids)
             SampleImage.objects.bulk_create(
                 [SampleImage(sample=instance, image=img) for img in images]
             )
-
-        # Update buyers
         if buyer_uids is not None:
             SampleBuyerConnection.objects.filter(sample=instance).delete()
             buyers = Buyer.objects.filter(uid__in=buyer_uids)
@@ -214,8 +319,6 @@ class SampleSerializer(serializers.ModelSerializer):
                     for buyer in buyers
                 ]
             )
-
-        # Update projects
         if project_uids is not None:
             ProjectSample.objects.filter(sample=instance).delete()
             projects = Project.objects.filter(uid__in=project_uids)
@@ -225,8 +328,6 @@ class SampleSerializer(serializers.ModelSerializer):
                     for project in projects
                 ]
             )
-
-        # Update notes
         if note_uids is not None:
             SampleNote.objects.filter(sample=instance).delete()
             notes = Note.objects.filter(uid__in=note_uids)

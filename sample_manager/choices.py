@@ -33,3 +33,14 @@ class SampleStatus(models.TextChoices):
     ACTIVE = "ACTIVE", "Active"
     OUT_OF_STOCK = "OUT_OF_STOCK", "Out_of_stock"
     DELETED = "Deleted"
+
+
+class ActionTypes(models.TextChoices):
+    CREATE = "CREATE", "Create"
+    UPDATE = "UPDATE", "Update"
+
+
+class ModifyRequestStatus(models.TextChoices):
+    PENDING = "PENDING", "Pending"
+    ACCEPTED = "ACCEPTED", "Accepted"
+    REJECTED = "REJECTED", "Rejected"

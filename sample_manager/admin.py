@@ -8,6 +8,7 @@ from .models import (
     FileNote,
     GarmentSample,
     Image,
+    ModifyRequest,
     Project,
     ProjectBuyerConnection,
     ProjectFile,
@@ -35,3 +36,4 @@ admin.site.register(SampleImage)
 admin.site.register(FileImage)
 admin.site.register(SampleNote)
 admin.site.register(FileNote)
+admin.site.register(ModifyRequest)

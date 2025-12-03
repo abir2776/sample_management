@@ -3,7 +3,7 @@ from rest_framework.generics import (
     ListCreateAPIView,
     RetrieveUpdateDestroyAPIView,
 )
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import OR
 from rest_framework.response import Response
 
 from common.choices import Status
@@ -19,6 +19,9 @@ from organizations.rest.serializers.users import (
 from sample_manager.permissions import (
     IsAdministrator,
     IsSuperAdmin,
+    IsAccountant,
+    IsManager,
+    IsMerchandiser,
 )
 
 
@@ -34,15 +37,7 @@ class CompanyUserListCreateView(ListCreateAPIView):
         return queryset
 
     def get_permissions(self):
-        method = self.request.method
-
-        if method == "GET":
-            return [IsAuthenticated()]
-
-        if method == "POST":
-            return [IsAdministrator()]
-
-        return [IsAuthenticated()]
+        return [IsAdministrator]
 
 
 class CompanyUserDetailsView(RetrieveUpdateDestroyAPIView):
@@ -51,15 +46,7 @@ class CompanyUserDetailsView(RetrieveUpdateDestroyAPIView):
     lookup_field = "uid"
 
     def get_permissions(self):
-        method = self.request.method
-
-        if method == "GET":
-            return [IsAuthenticated()]
-
-        if method == "PUT" or method == "PATCH":
-            return [IsAdministrator()]
-
-        return [IsAuthenticated()]
+        return [IsAdministrator]
 
     def delete(self, request, *args, **kwargs):
         company_user = self.get_object()
