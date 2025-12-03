@@ -7,7 +7,7 @@ from common.choices import Status
 from organizations.choices import CompanyUserRole
 from sample_manager.models import Buyer
 from sample_manager.permissions import IsAdministrator, IsSuperAdmin
-from sample_manager.rest.serializers.buyer import AdminBuyerSerializer, BuyerSerializer
+from sample_manager.rest.serializers.buyer import BuyerSerializer
 
 
 class BuyerListCreateView(ListCreateAPIView):
@@ -30,14 +30,6 @@ class BuyerListCreateView(ListCreateAPIView):
             return [OR(IsSuperAdmin(), IsAdministrator())]
 
         return [IsAuthenticated()]
-
-    def get_serializer_class(self):
-        role = self.request.user.get_role()
-
-        if role == CompanyUserRole.SUPER_ADMIN:
-            return AdminBuyerSerializer
-
-        return BuyerSerializer
 
 
 class BuyerDetailView(RetrieveUpdateDestroyAPIView):

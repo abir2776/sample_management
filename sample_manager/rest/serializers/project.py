@@ -2,6 +2,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from common.serializers import BuyerSlimSerializer, ImageSlimSerializer
+from organizations.choices import CompanyUserRole
 from organizations.models import Company
 from sample_manager.models import (
     Buyer,
@@ -13,7 +14,7 @@ from sample_manager.models import (
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-    company_uid = serializers.CharField(write_only=True)
+    company_uid = serializers.CharField(write_only=True, required=False)
     image_uids = serializers.ListField(
         child=serializers.CharField(),
         write_only=True,
@@ -46,7 +47,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             "image_uids",
             "images",
             "buyer_uids",
-            "buyer",
+            "buyers",
         ]
         read_only_fields = ["id", "uid", "created_at", "updated_at", "company"]
 
@@ -58,7 +59,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         return ImageSlimSerializer(images, many=True).data
 
     def get_buyers(self, obj):
-        buyer_ids = ProjectBuyerConnection.objects.filter(porject=obj).values_list(
+        buyer_ids = ProjectBuyerConnection.objects.filter(project=obj).values_list(
             "buyer_id", flat=True
         )
         buyers = Buyer.objects.filter(id__in=buyer_ids)
@@ -66,13 +67,19 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        company_uid = validated_data.pop("company_uid")
+        user = self.context["request"].user
+        role = user.get_role()
+
+        if role == CompanyUserRole.SUPER_ADMIN:
+            company_uid = validated_data.pop("company_uid")
+            company = Company.objects.filter(uid=company_uid).first()
+            if company == None:
+                raise serializers.ValidationError("Invalid company UID")
+        else:
+            company = user.get_company()
+
         image_uids = validated_data.pop("image_uids", [])
         buyer_uids = validated_data.pop("buyer_uids", [])
-
-        company = Company.objects.filter(uid=company_uid).first()
-        if company == None:
-            raise serializers.ValidationError("Invalid company UID")
 
         project = Project.objects.create(
             company=company,
@@ -98,11 +105,12 @@ class ProjectSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         image_uids = validated_data.pop("image_uids", None)
         buyer_uids = validated_data.pop("buyer_uids", None)
-        company_uid = validated_data.pop("company_uid")
-        company = Company.objects.filter(uid=company_uid).first()
-        if company == None:
-            raise serializers.ValidationError("Invalid company UID")
-        instance.company = company
+        company_uid = validated_data.pop("company_uid", None)
+        if company_uid:
+            company = Company.objects.filter(uid=company_uid).first()
+            if company == None:
+                raise serializers.ValidationError("Invalid company UID")
+            instance.company = company
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()

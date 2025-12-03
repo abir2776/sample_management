@@ -1,10 +1,12 @@
 from rest_framework import status
+from rest_framework.exceptions import APIException
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import OR, IsAuthenticated
 from rest_framework.response import Response
 
 from common.choices import Status
-from sample_manager.models import File
+from sample_manager.choices import StorageType
+from sample_manager.models import File, Storage
 from sample_manager.permissions import (
     IsAdministrator,
     IsSuperAdmin,
@@ -17,9 +19,16 @@ class StorageFileListCreateView(ListCreateAPIView):
 
     def get_queryset(self):
         storage_uid = self.kwargs.get("storage_uid")
+        storage = Storage.objects.filter(
+            uid=storage_uid, type=StorageType.DRAWER
+        ).first()
+        if not storage:
+            raise APIException("Invalid storage uid provided")
         company = self.request.user.get_company()
         return File.objects.filter(
-            company=company, storage__uid=storage_uid, is_active=True
+            company=company,
+            storage=storage,
+            is_active=True,
         )
 
     def get_permissions(self):
@@ -54,9 +63,16 @@ class StorageFileDetailView(RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         storage_uid = self.kwargs.get("storage_uid")
+        storage = Storage.objects.filter(
+            uid=storage_uid, type=StorageType.DRAWER
+        ).first()
+        if not storage:
+            raise APIException("Invalid storage uid provided")
         company = self.request.user.get_company()
         return File.objects.filter(
-            company=company, storage__uid=storage_uid, is_active=True
+            company=company,
+            storag=storage,
+            is_active=True,
         )
 
     def delete(self, request, *args, **kwargs):
