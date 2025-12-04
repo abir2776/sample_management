@@ -6,17 +6,26 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Install required system packages
-RUN apt update && apt install -y gcc libpq-dev
+# Install system dependencies (Postgres, libmagic, build tools)
+RUN apt update && apt install -y \
+    gcc \
+    libpq-dev \
+    libmagic1 \
+    libmagic-dev \
+    file \
+    && apt clean && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
+# Copy dependency list
 COPY requirements.txt /app/
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project
+# Copy project files
 COPY . /app/
 
-# Run Django migrations & start server
+# Expose Django port
+EXPOSE 5000
+
+# Run migrations and start Django server
 CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:5000"]
