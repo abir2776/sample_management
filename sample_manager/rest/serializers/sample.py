@@ -94,7 +94,7 @@ class SampleSerializer(serializers.ModelSerializer):
             "notes",
         ]
         read_only_fields = [
-            "bucket",
+            "storage",
             "id",
             "uid",
             "created_by",
@@ -150,7 +150,6 @@ class SampleSerializer(serializers.ModelSerializer):
         project_uids,
         note_uids,
     ):
-        """Helper method to prepare JSON serializable request data"""
         request_data = {}
         for key, value in validated_data.items():
             if hasattr(value, "isoformat"):
@@ -197,16 +196,22 @@ class SampleSerializer(serializers.ModelSerializer):
             **validated_data,
         )
         SampleImage.objects.bulk_create(
-            [SampleImage(sample=sample, image=img) for img in images]
+            [SampleImage(sample=sample, image=img, company=company) for img in images]
         )
         SampleBuyerConnection.objects.bulk_create(
-            [SampleBuyerConnection(sample=sample, buyer=buyer) for buyer in buyers]
+            [
+                SampleBuyerConnection(sample=sample, buyer=buyer, company=company)
+                for buyer in buyers
+            ]
         )
         ProjectSample.objects.bulk_create(
-            [ProjectSample(sample=sample, project=project) for project in projects]
+            [
+                ProjectSample(sample=sample, project=project, company=company)
+                for project in projects
+            ]
         )
         SampleNote.objects.bulk_create(
-            [SampleNote(sample=sample, note=note) for note in notes]
+            [SampleNote(sample=sample, note=note, company=company) for note in notes]
         )
         if user.get_role() == CompanyUserRole.STAFF:
             request_data = self._prepare_request_data(
@@ -305,17 +310,20 @@ class SampleSerializer(serializers.ModelSerializer):
             instance.storage = storage
         instance.save()
         if image_uids is not None:
-            SampleImage.objects.filter(sample=instance).delete()
+            SampleImage.objects.filter(sample=instance, company=company).delete()
             images = Image.objects.filter(uid__in=image_uids)
             SampleImage.objects.bulk_create(
-                [SampleImage(sample=instance, image=img) for img in images]
+                [
+                    SampleImage(sample=instance, image=img, company=company)
+                    for img in images
+                ]
             )
         if buyer_uids is not None:
             SampleBuyerConnection.objects.filter(sample=instance).delete()
             buyers = Buyer.objects.filter(uid__in=buyer_uids)
             SampleBuyerConnection.objects.bulk_create(
                 [
-                    SampleBuyerConnection(sample=instance, buyer=buyer)
+                    SampleBuyerConnection(sample=instance, buyer=buyer, company=company)
                     for buyer in buyers
                 ]
             )
@@ -324,7 +332,7 @@ class SampleSerializer(serializers.ModelSerializer):
             projects = Project.objects.filter(uid__in=project_uids)
             ProjectSample.objects.bulk_create(
                 [
-                    ProjectSample(sample=instance, project=project)
+                    ProjectSample(sample=instance, project=project, company=company)
                     for project in projects
                 ]
             )
@@ -332,7 +340,10 @@ class SampleSerializer(serializers.ModelSerializer):
             SampleNote.objects.filter(sample=instance).delete()
             notes = Note.objects.filter(uid__in=note_uids)
             SampleNote.objects.bulk_create(
-                [SampleNote(sample=instance, note=note) for note in notes]
+                [
+                    SampleNote(sample=instance, note=note, company=company)
+                    for note in notes
+                ]
             )
 
         return instance

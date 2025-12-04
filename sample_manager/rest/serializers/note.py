@@ -1,11 +1,12 @@
 from rest_framework import serializers
 
+from organizations.choices import CompanyUserRole
 from organizations.models import Company
 from sample_manager.models import Note
 
 
 class NoteSerializer(serializers.ModelSerializer):
-    company_uid = serializers.CharField(write_only=True)
+    company_uid = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         model = Note
@@ -22,11 +23,15 @@ class NoteSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "uid", "company", "created_by", "status"]
 
     def create(self, validated_data):
-        company_uid = validated_data.pop("company_uid")
+        company_uid = validated_data.pop("company_uid", None)
         user = self.context["request"].user
-        company = Company.objects.filter(uid=company_uid).first()
-        if company == None:
-            raise serializers.ValidationError("Invalid company UID")
+        role = user.get_role()
+        if role == CompanyUserRole.SUPER_ADMIN:
+            company = Company.objects.filter(uid=company_uid).first()
+            if company == None:
+                raise serializers.ValidationError("Invalid company UID")
+        else:
+            company = user.get_company()
 
         note = Note.objects.create(company=company, created_by=user, **validated_data)
         return note

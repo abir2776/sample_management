@@ -56,22 +56,26 @@ class ProjectSerializer(serializers.ModelSerializer):
             "image_id", flat=True
         )
         images = Image.objects.filter(id__in=image_ids)
-        return ImageSlimSerializer(images, many=True).data
+        return ImageSlimSerializer(
+            images, many=True, context={"request": self.context["request"]}
+        ).data
 
     def get_buyers(self, obj):
         buyer_ids = ProjectBuyerConnection.objects.filter(project=obj).values_list(
             "buyer_id", flat=True
         )
         buyers = Buyer.objects.filter(id__in=buyer_ids)
-        return BuyerSlimSerializer(buyers, many=True).data
+        return BuyerSlimSerializer(
+            buyers, many=True, context={"request": self.context["request"]}
+        ).data
 
     @transaction.atomic
     def create(self, validated_data):
         user = self.context["request"].user
         role = user.get_role()
+        company_uid = validated_data.pop("company_uid", None)
 
         if role == CompanyUserRole.SUPER_ADMIN:
-            company_uid = validated_data.pop("company_uid")
             company = Company.objects.filter(uid=company_uid).first()
             if company == None:
                 raise serializers.ValidationError("Invalid company UID")
@@ -88,13 +92,18 @@ class ProjectSerializer(serializers.ModelSerializer):
         if image_uids:
             images = Image.objects.filter(uid__in=image_uids)
             ProjectImage.objects.bulk_create(
-                [ProjectImage(project=project, image=img) for img in images]
+                [
+                    ProjectImage(project=project, image=img, company=company)
+                    for img in images
+                ]
             )
         if buyer_uids:
             buyers = Buyer.objects.filter(uid__in=buyer_uids)
             ProjectBuyerConnection.objects.bulk_create(
                 [
-                    ProjectBuyerConnection(project=project, buyer=buyer)
+                    ProjectBuyerConnection(
+                        project=project, buyer=buyer, company=company
+                    )
                     for buyer in buyers
                 ]
             )
@@ -118,14 +127,19 @@ class ProjectSerializer(serializers.ModelSerializer):
             ProjectImage.objects.filter(project=instance).delete()
             images = Image.objects.filter(uid__in=image_uids)
             ProjectImage.objects.bulk_create(
-                [ProjectImage(project=instance, image=img) for img in images]
+                [
+                    ProjectImage(project=instance, image=img, company=company)
+                    for img in images
+                ]
             )
         if buyer_uids is not None:
             ProjectBuyerConnection.objects.filter(project=instance).delete()
             buyers = Buyer.objects.filter(uid__in=buyer_uids)
             ProjectBuyerConnection.objects.bulk_create(
                 [
-                    ProjectBuyerConnection(project=instance, buyer=buyer)
+                    ProjectBuyerConnection(
+                        project=instance, buyer=buyer, company=company
+                    )
                     for buyer in buyers
                 ]
             )

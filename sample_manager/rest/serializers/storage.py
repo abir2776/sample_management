@@ -23,10 +23,10 @@ class StorageSerializer(serializers.ModelSerializer):
                     "No Storage found with this given uid"
                 )
 
-        bucket = Storage.objects.create(
+        storage = Storage.objects.create(
             created_by=user, company=company, parent=parent, **validated_data
         )
-        return bucket
+        return storage
 
     def update(self, instance, validated_data):
         parent_uid = validated_data.pop("parent_uid", None)

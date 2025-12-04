@@ -25,11 +25,16 @@ class StorageListCreateView(ListCreateAPIView):
     search_fields = ["name"]
 
     def get_queryset(self):
-        company = self.request.user.get_company()
-        role = self.request.user.get_role()
-        if role == CompanyUserRole.SUPER_ADMIN:
-            return Storage.objects.filter()
-        return Storage.objects.filter(company=company)
+        request = self.request
+        parent_uid = request.query_params.get("parent_uid")
+        company = request.user.get_company()
+        role = request.user.get_role()
+        base_queryset = Storage.objects.all()
+        if role != CompanyUserRole.SUPER_ADMIN:
+            base_queryset = base_queryset.filter(company=company)
+        if parent_uid:
+            return base_queryset.filter(parent__uid=parent_uid)
+        return base_queryset.filter(parent__isnull=True)
 
     def get_permissions(self):
         method = self.request.method
@@ -83,5 +88,6 @@ class StorageDetailView(RetrieveUpdateDestroyAPIView):
         storage.status = Status.REMOVED
         storage.save()
         return Response(
-            {"detail": "Bucket deleted successfully"}, status=status.HTTP_204_NO_CONTENT
+            {"detail": "Storage deleted successfully"},
+            status=status.HTTP_204_NO_CONTENT,
         )
