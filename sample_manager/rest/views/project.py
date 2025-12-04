@@ -40,8 +40,7 @@ class ProjectDetailView(RetrieveUpdateDestroyAPIView):
     lookup_field = "uid"
 
     def get_queryset(self):
-        company = self.request.user.get_company()
-        return Project.objects.filter(company=company)
+        return Project.objects.filter()
 
     def get_permissions(self):
         method = self.request.method
