@@ -4,7 +4,7 @@ services:
   web:
     build: .
     container_name: django_app
-    command: python manage.py runserver 0.0.0.0:5000
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:5000"
     volumes:
       - .:/app
     ports:
@@ -22,8 +22,9 @@ services:
       POSTGRES_DB: sample_management_db
       POSTGRES_USER: osman
       POSTGRES_PASSWORD: 6864
-    ports:
-      - "5432:5432"
+    # REMOVE PORTS because your host machine already uses 5432
+    # ports:
+    #   - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
