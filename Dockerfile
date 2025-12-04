@@ -18,10 +18,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /app/
 
-# Create static directory and collect static files
+# Create static directory
 RUN mkdir -p /app/static
-RUN python manage.py collectstatic --noinput || true
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:5000"]
+# Run collectstatic, migrations, then server
+CMD ["sh", "-c", "python manage.py collectstatic --noinput --clear && python manage.py migrate && python manage.py runserver 0.0.0.0:5000"]
