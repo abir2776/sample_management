@@ -20,8 +20,8 @@ class ProjectListCreateView(ListCreateAPIView):
         role = self.request.user.get_role()
         company = self.request.user.get_company()
         if role == CompanyUserRole.SUPER_ADMIN:
-            return Project.objects.filter()
-        return Project.objects.filter(company=company)
+            return Project.objects.filter(status=Status.ACTIVE)
+        return Project.objects.filter(company=company, status=Status.ACTIVE)
 
     def get_permissions(self):
         method = self.request.method
@@ -40,7 +40,7 @@ class ProjectDetailView(RetrieveUpdateDestroyAPIView):
     lookup_field = "uid"
 
     def get_queryset(self):
-        return Project.objects.filter()
+        return Project.objects.filter(status=Status.ACTIVE)
 
     def get_permissions(self):
         method = self.request.method

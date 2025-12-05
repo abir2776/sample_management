@@ -20,7 +20,7 @@ class SampleListCreateView(ListCreateAPIView):
     def get_queryset(self):
         storage_uid = self.kwargs.get("storage_uid")
         storage = Storage.objects.filter(
-            uid=storage_uid, type=StorageType.SPACE
+            uid=storage_uid, type=StorageType.SPACE, status=Status.ACTIVE
         ).first()
         if not storage:
             raise APIException("Invalid storage uid provided")
@@ -30,6 +30,7 @@ class SampleListCreateView(ListCreateAPIView):
             storage__uid=storage_uid,
             is_active=True,
             type=StorageType.SPACE,
+            status=Status.ACTIVE,
         )
 
     def get_permissions(self):
@@ -65,7 +66,7 @@ class SampleDetailView(RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         storage_uid = self.kwargs.get("storage_uid")
         storage = Storage.objects.filter(
-            uid=storage_uid, type=StorageType.SPACE
+            uid=storage_uid, type=StorageType.SPACE, status=Status.ACTIVE
         ).first()
         if not storage:
             raise APIException("Invalid storage uid provided")
@@ -75,6 +76,7 @@ class SampleDetailView(RetrieveUpdateDestroyAPIView):
             storage__uid=storage_uid,
             is_active=True,
             type=StorageType.SPACE,
+            status=Status.ACTIVE,
         )
 
     def delete(self, request, *args, **kwargs):

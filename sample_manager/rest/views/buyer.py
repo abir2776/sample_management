@@ -8,6 +8,7 @@ from organizations.choices import CompanyUserRole
 from sample_manager.models import Buyer
 from sample_manager.permissions import IsAdministrator, IsSuperAdmin
 from sample_manager.rest.serializers.buyer import BuyerSerializer
+from common.choices import Status
 
 
 class BuyerListCreateView(ListCreateAPIView):
@@ -16,9 +17,9 @@ class BuyerListCreateView(ListCreateAPIView):
     def get_queryset(self):
         role = self.request.user.get_role()
         if role == CompanyUserRole.SUPER_ADMIN:
-            return Buyer.objects.all()
+            return Buyer.objects.filter(status=Status.ACTIVE)
         company = self.request.user.get_company()
-        return Buyer.objects.filter(company=company)
+        return Buyer.objects.filter(company=company, status=Status.ACTIVE)
 
     def get_permissions(self):
         method = self.request.method
@@ -34,6 +35,7 @@ class BuyerListCreateView(ListCreateAPIView):
 
 class BuyerDetailView(RetrieveUpdateDestroyAPIView):
     serializer_class = BuyerSerializer
+    queryset = Buyer.objects.filter(status=Status.ACTIVE)
     lookup_field = "uid"
 
     def get_permissions(self):
@@ -49,10 +51,6 @@ class BuyerDetailView(RetrieveUpdateDestroyAPIView):
             return [OR(IsSuperAdmin(), IsAdministrator())]
 
         return [IsAuthenticated()]
-
-    def get_queryset(self):
-        company = self.request.user.get_company()
-        return Buyer.objects.filter(company=company)
 
     def delete(self, request, *args, **kwargs):
         buyer = self.get_object()

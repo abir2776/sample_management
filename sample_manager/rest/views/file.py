@@ -20,15 +20,13 @@ class StorageFileListCreateView(ListCreateAPIView):
     def get_queryset(self):
         storage_uid = self.kwargs.get("storage_uid")
         storage = Storage.objects.filter(
-            uid=storage_uid, type=StorageType.DRAWER
+            uid=storage_uid, type=StorageType.DRAWER, status=Status.ACTIVE
         ).first()
         if not storage:
             raise APIException("Invalid storage uid provided")
         company = self.request.user.get_company()
         return File.objects.filter(
-            company=company,
-            storage=storage,
-            is_active=True,
+            company=company, storage=storage, is_active=True, status=Status.ACTIVE
         )
 
     def get_permissions(self):
@@ -64,15 +62,13 @@ class StorageFileDetailView(RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         storage_uid = self.kwargs.get("storage_uid")
         storage = Storage.objects.filter(
-            uid=storage_uid, type=StorageType.DRAWER
+            uid=storage_uid, type=StorageType.DRAWER, status=Status.ACTIVE
         ).first()
         if not storage:
             raise APIException("Invalid storage uid provided")
         company = self.request.user.get_company()
         return File.objects.filter(
-            company=company,
-            storag=storage,
-            is_active=True,
+            company=company, storag=storage, is_active=True, status=Status.ACTIVE
         )
 
     def delete(self, request, *args, **kwargs):

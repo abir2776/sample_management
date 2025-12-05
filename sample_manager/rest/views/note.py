@@ -20,9 +20,9 @@ class NoteListCreateView(ListCreateAPIView):
         role = self.request.user.get_role()
         company = self.request.user.get_company()
         if role == CompanyUserRole.SUPER_ADMIN:
-            return Note.objects.filter()
+            return Note.objects.filter(status=Status.ACTIVE)
         company = self.request.user.get_company()
-        return Note.objects.filter(company=company)
+        return Note.objects.filter(company=company, status=Status.ACTIVE)
 
     def get_permissions(self):
         method = self.request.method
@@ -39,7 +39,7 @@ class NoteListCreateView(ListCreateAPIView):
 class NoteDetailView(RetrieveUpdateDestroyAPIView):
     serializer_class = NoteSerializer
     lookup_field = "uid"
-    queryset = Note.objects.filter()
+    queryset = Note.objects.filter(status=Status.ACTIVE)
 
     def get_permissions(self):
         method = self.request.method
