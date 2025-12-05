@@ -4,6 +4,7 @@ from rest_framework import serializers
 from common.serializers import BuyerSlimSerializer, ImageSlimSerializer
 from organizations.choices import CompanyUserRole
 from organizations.models import Company
+from organizations.rest.serializers.company import CompanySerializer
 from sample_manager.models import (
     Buyer,
     Image,
@@ -31,6 +32,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     )
     images = serializers.SerializerMethodField()
     buyers = serializers.SerializerMethodField()
+    company = CompanySerializer(read_only=True)
 
     class Meta:
         model = Project

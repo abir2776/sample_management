@@ -39,10 +39,7 @@ class NoteListCreateView(ListCreateAPIView):
 class NoteDetailView(RetrieveUpdateDestroyAPIView):
     serializer_class = NoteSerializer
     lookup_field = "uid"
-
-    def get_queryset(self):
-        company = self.request.user.get_company()
-        return Note.objects.filter(company=company)
+    queryset = Note.objects.filter()
 
     def get_permissions(self):
         method = self.request.method
