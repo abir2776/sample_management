@@ -29,7 +29,6 @@ class SampleListCreateView(ListCreateAPIView):
             company=company,
             storage__uid=storage_uid,
             is_active=True,
-            type=StorageType.SPACE,
             status=Status.ACTIVE,
         )
 
@@ -75,7 +74,6 @@ class SampleDetailView(RetrieveUpdateDestroyAPIView):
             company=company,
             storage__uid=storage_uid,
             is_active=True,
-            type=StorageType.SPACE,
             status=Status.ACTIVE,
         )
 
