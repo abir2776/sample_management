@@ -65,7 +65,7 @@ class SampleDetailView(RetrieveUpdateDestroyAPIView):
             return [IsAuthenticated()]
 
         if method == "DELETE":
-            return [OR(IsSuperAdmin, IsAdministrator())]
+            return [OR(IsSuperAdmin(), IsAdministrator())]
 
         return [IsAuthenticated()]
 
@@ -94,7 +94,7 @@ class SampleDetailView(RetrieveUpdateDestroyAPIView):
 
 
 class GarmentSampleHistoryListView(ListAPIView):
-    permission_classes = [OR(IsSuperAdmin, IsAdministrator())]
+    permission_classes = [OR(IsSuperAdmin(), IsAdministrator())]
     serializer_class = GarmentSampleHistorySerializer
 
     def get_queryset(self):

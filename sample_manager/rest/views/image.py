@@ -63,7 +63,7 @@ class ImageDetailView(RetrieveUpdateDestroyAPIView):
             ]
 
         if method == "DELETE":
-            return [OR(IsSuperAdmin, IsAdministrator())]
+            return [OR(IsSuperAdmin(), IsAdministrator())]
 
         return [IsAuthenticated()]
 

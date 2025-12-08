@@ -62,7 +62,7 @@ class StorageFileDetailView(RetrieveUpdateDestroyAPIView):
             return [IsAuthenticated()]
 
         if method == "DELETE":
-            return [OR(IsSuperAdmin, IsAdministrator())]
+            return [OR(IsSuperAdmin(), IsAdministrator())]
 
         return [IsAuthenticated()]
 
@@ -88,7 +88,7 @@ class StorageFileDetailView(RetrieveUpdateDestroyAPIView):
 
 
 class FileHistoryListView(ListAPIView):
-    permission_classes = [OR(IsSuperAdmin, IsAdministrator())]
+    permission_classes = [OR(IsSuperAdmin(), IsAdministrator())]
     serializer_class = FileHistorySerializer
 
     def get_queryset(self):

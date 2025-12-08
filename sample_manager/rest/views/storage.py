@@ -86,7 +86,7 @@ class StorageDetailView(RetrieveUpdateDestroyAPIView):
             ]
 
         if method == "DELETE":
-            return [OR(IsSuperAdmin, IsAdministrator())]
+            return [OR(IsSuperAdmin(), IsAdministrator())]
 
         return [IsAuthenticated()]
 
@@ -101,7 +101,7 @@ class StorageDetailView(RetrieveUpdateDestroyAPIView):
 
 
 class StorageHistoryListView(ListAPIView):
-    permission_classes = [OR(IsSuperAdmin, IsAdministrator())]
+    permission_classes = [OR(IsSuperAdmin(), IsAdministrator())]
     serializer_class = StorageHistorySerializer
 
     def get_queryset(self):
