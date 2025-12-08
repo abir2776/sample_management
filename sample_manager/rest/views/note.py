@@ -1,5 +1,9 @@
 from rest_framework import status
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import (
+    ListAPIView,
+    ListCreateAPIView,
+    RetrieveUpdateDestroyAPIView,
+)
 from rest_framework.permissions import OR, IsAuthenticated
 from rest_framework.response import Response
 
@@ -10,7 +14,7 @@ from sample_manager.permissions import (
     IsAdministrator,
     IsSuperAdmin,
 )
-from sample_manager.rest.serializers.note import NoteSerializer
+from sample_manager.rest.serializers.note import NoteHistorySerializer, NoteSerializer
 
 
 class NoteListCreateView(ListCreateAPIView):
@@ -64,3 +68,12 @@ class NoteDetailView(RetrieveUpdateDestroyAPIView):
             {"detail": "Note deleted successfully"},
             status=status.HTTP_204_NO_CONTENT,
         )
+
+
+class NoteHistoryListView(ListAPIView):
+    permission_classes = [OR(IsSuperAdmin(), IsAdministrator())]
+    serializer_class = NoteHistorySerializer
+
+    def get_queryset(self):
+        note_uid = self.kwargs.get("uid")
+        return Note.history.filter(id=note_uid).order_by("-history_date")

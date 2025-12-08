@@ -1,6 +1,10 @@
 from rest_framework import status
 from rest_framework.exceptions import APIException
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import (
+    ListAPIView,
+    ListCreateAPIView,
+    RetrieveUpdateDestroyAPIView,
+)
 from rest_framework.permissions import OR, IsAuthenticated
 from rest_framework.response import Response
 
@@ -11,7 +15,10 @@ from sample_manager.permissions import (
     IsAdministrator,
     IsSuperAdmin,
 )
-from sample_manager.rest.serializers.file import StorageFileSerializer
+from sample_manager.rest.serializers.file import (
+    FileHistorySerializer,
+    StorageFileSerializer,
+)
 
 
 class StorageFileListCreateView(ListCreateAPIView):
@@ -78,3 +85,12 @@ class StorageFileDetailView(RetrieveUpdateDestroyAPIView):
         return Response(
             {"detail": "File deleted successfully"}, status=status.HTTP_204_NO_CONTENT
         )
+
+
+class FileHistoryListView(ListAPIView):
+    permission_classes = [OR(IsSuperAdmin, IsAdministrator())]
+    serializer_class = FileHistorySerializer
+
+    def get_queryset(self):
+        file_uid = self.kwargs.get("uid")
+        return File.history.filter(id=file_uid).order_by("-history_date")

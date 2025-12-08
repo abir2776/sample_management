@@ -10,6 +10,7 @@ from common.serializers import (
     ProjectSlimSerializer,
 )
 from organizations.choices import CompanyUserRole
+from organizations.rest.serializers.users import UserSerializer
 from sample_manager.choices import ActionTypes, StorageType
 from sample_manager.models import (
     Buyer,
@@ -347,3 +348,40 @@ class SampleSerializer(serializers.ModelSerializer):
             )
 
         return instance
+
+
+class GarmentSampleHistorySerializer(serializers.ModelSerializer):
+    changed_by = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GarmentSample.history.model
+        fields = [
+            "id",
+            "storage",
+            "sample_id",
+            "created_by",
+            "arrival_date",
+            "style_no",
+            "sku_no",
+            "item",
+            "fabrication",
+            "weight",
+            "weight_type",
+            "color",
+            "size",
+            "size_type",
+            "types",
+            "comments",
+            "company",
+            "name",
+            "description",
+            "status",
+            "is_active",
+            "history_id",
+            "history_type",
+            "history_date",
+            "changed_by",
+        ]
+
+    def get_changed_by(self, obj):
+        return UserSerializer(obj.history_user).data

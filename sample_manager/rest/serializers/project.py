@@ -5,6 +5,7 @@ from common.serializers import BuyerSlimSerializer, ImageSlimSerializer
 from organizations.choices import CompanyUserRole
 from organizations.models import Company
 from organizations.rest.serializers.company import CompanySerializer
+from organizations.rest.serializers.users import UserSerializer
 from sample_manager.models import (
     Buyer,
     Image,
@@ -147,3 +148,25 @@ class ProjectSerializer(serializers.ModelSerializer):
             )
 
         return instance
+
+
+class ProjectHistorySerializer(serializers.ModelSerializer):
+    changed_by = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Project.history.model
+        fields = [
+            "id",
+            "name",
+            "company",
+            "started_at",
+            "will_finish_at",
+            "status",
+            "history_id",
+            "history_type",
+            "history_date",
+            "changed_by",
+        ]
+
+    def get_changed_by(self, obj):
+        return UserSerializer(obj.history_user).data

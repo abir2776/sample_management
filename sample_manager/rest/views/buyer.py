@@ -1,5 +1,9 @@
 from rest_framework import status
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import (
+    ListAPIView,
+    ListCreateAPIView,
+    RetrieveUpdateDestroyAPIView,
+)
 from rest_framework.permissions import OR, IsAuthenticated
 from rest_framework.response import Response
 
@@ -7,8 +11,10 @@ from common.choices import Status
 from organizations.choices import CompanyUserRole
 from sample_manager.models import Buyer
 from sample_manager.permissions import IsAdministrator, IsSuperAdmin
-from sample_manager.rest.serializers.buyer import BuyerSerializer
-from common.choices import Status
+from sample_manager.rest.serializers.buyer import (
+    BuyerHistorySerializer,
+    BuyerSerializer,
+)
 
 
 class BuyerListCreateView(ListCreateAPIView):
@@ -59,3 +65,12 @@ class BuyerDetailView(RetrieveUpdateDestroyAPIView):
         return Response(
             {"detail": "Buyer deleted successfully"}, status=status.HTTP_204_NO_CONTENT
         )
+
+
+class BuyerHistoryListView(ListAPIView):
+    serializer_class = BuyerHistorySerializer
+    permission_classes = [OR(IsSuperAdmin(), IsAdministrator())]
+
+    def get_queryset(self):
+        buyer_uid = self.kwargs.get("uid")
+        return Buyer.history.filter(id=buyer_uid).order_by("-history_date")

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from organizations.rest.serializers.users import UserSerializer
 from sample_manager.models import Storage
 
 
@@ -44,3 +45,28 @@ class StorageSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+
+class StorageHistorySerializer(serializers.ModelSerializer):
+    changed_by = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Storage.history.model
+        fields = [
+            "id",
+            "company",
+            "created_by",
+            "name",
+            "description",
+            "parent",
+            "status",
+            "type",
+            "image",
+            "history_id",
+            "history_type",
+            "history_date",
+            "changed_by",
+        ]
+
+    def get_changed_by(self, obj):
+        return UserSerializer(obj.history_user).data

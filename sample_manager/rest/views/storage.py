@@ -1,7 +1,11 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.filters import SearchFilter
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import (
+    ListAPIView,
+    ListCreateAPIView,
+    RetrieveUpdateDestroyAPIView,
+)
 from rest_framework.permissions import OR, IsAuthenticated
 from rest_framework.response import Response
 
@@ -15,7 +19,10 @@ from sample_manager.permissions import (
     IsMerchandiser,
     IsSuperAdmin,
 )
-from sample_manager.rest.serializers.storage import StorageSerializer
+from sample_manager.rest.serializers.storage import (
+    StorageHistorySerializer,
+    StorageSerializer,
+)
 
 
 class StorageListCreateView(ListCreateAPIView):
@@ -91,3 +98,12 @@ class StorageDetailView(RetrieveUpdateDestroyAPIView):
             {"detail": "Storage deleted successfully"},
             status=status.HTTP_204_NO_CONTENT,
         )
+
+
+class StorageHistoryListView(ListAPIView):
+    permission_classes = [OR(IsSuperAdmin, IsAdministrator())]
+    serializer_class = StorageHistorySerializer
+
+    def get_queryset(self):
+        storage_uid = self.kwargs.get("uid")
+        return Storage.history.filter(id=storage_uid).order_by("-history_date")

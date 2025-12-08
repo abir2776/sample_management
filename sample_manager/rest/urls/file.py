@@ -1,6 +1,7 @@
 from django.urls import path
 
 from sample_manager.rest.views.file import (
+    FileHistoryListView,
     StorageFileDetailView,
     StorageFileListCreateView,
 )
@@ -16,4 +17,5 @@ urlpatterns = [
         StorageFileDetailView.as_view(),
         name="storage-file-details",
     ),
+    path("<uuid:uid>/history/", FileHistoryListView.as_view(), name="file-history"),
 ]

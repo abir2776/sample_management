@@ -4,6 +4,7 @@ from organizations.choices import CompanyUserRole
 from organizations.models import Company
 from sample_manager.models import Note
 from organizations.rest.serializers.company import CompanySerializer
+from organizations.rest.serializers.users import UserSerializer
 
 
 class NoteSerializer(serializers.ModelSerializer):
@@ -48,3 +49,25 @@ class NoteSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+
+class NoteHistorySerializer(serializers.ModelSerializer):
+    changed_by = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Note.history.model
+        fields = [
+            "id",
+            "title",
+            "description",
+            "company",
+            "created_by",
+            "status",
+            "history_id",
+            "history_type",
+            "history_date",
+            "changed_by",
+        ]
+
+    def get_changed_by(self, obj):
+        return UserSerializer(obj.history_user).data

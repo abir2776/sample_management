@@ -1,5 +1,9 @@
 from rest_framework import status
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import (
+    ListAPIView,
+    ListCreateAPIView,
+    RetrieveUpdateDestroyAPIView,
+)
 from rest_framework.permissions import OR, IsAuthenticated
 from rest_framework.response import Response
 
@@ -10,7 +14,10 @@ from sample_manager.permissions import (
     IsAdministrator,
     IsSuperAdmin,
 )
-from sample_manager.rest.serializers.project import ProjectSerializer
+from sample_manager.rest.serializers.project import (
+    ProjectHistorySerializer,
+    ProjectSerializer,
+)
 
 
 class ProjectListCreateView(ListCreateAPIView):
@@ -65,3 +72,12 @@ class ProjectDetailView(RetrieveUpdateDestroyAPIView):
             {"detail": "Project deleted successfully"},
             status=status.HTTP_204_NO_CONTENT,
         )
+
+
+class ProjectHistoryListView(ListAPIView):
+    permission_classes = [OR(IsSuperAdmin(), IsAdministrator())]
+    serializer_class = ProjectHistorySerializer
+
+    def get_queryset(self):
+        project_uid = self.kwargs.get("uid")
+        return Project.history.filter(id=project_uid).order_by("-history_date")

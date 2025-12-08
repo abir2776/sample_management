@@ -1,6 +1,10 @@
 from rest_framework import status
 from rest_framework.exceptions import APIException
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import (
+    ListAPIView,
+    ListCreateAPIView,
+    RetrieveUpdateDestroyAPIView,
+)
 from rest_framework.permissions import OR, IsAuthenticated
 from rest_framework.response import Response
 
@@ -11,7 +15,10 @@ from sample_manager.permissions import (
     IsAdministrator,
     IsSuperAdmin,
 )
-from sample_manager.rest.serializers.sample import SampleSerializer
+from sample_manager.rest.serializers.sample import (
+    GarmentSampleHistorySerializer,
+    SampleSerializer,
+)
 
 
 class SampleListCreateView(ListCreateAPIView):
@@ -84,3 +91,12 @@ class SampleDetailView(RetrieveUpdateDestroyAPIView):
         return Response(
             {"detail": "Sample deleted successfully"}, status=status.HTTP_204_NO_CONTENT
         )
+
+
+class GarmentSampleHistoryListView(ListAPIView):
+    permission_classes = [OR(IsSuperAdmin, IsAdministrator())]
+    serializer_class = GarmentSampleHistorySerializer
+
+    def get_queryset(self):
+        uid = self.kwargs.get("uid")
+        return GarmentSample.history.filter(id=uid).order_by("-history_date")

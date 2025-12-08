@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from organizations.choices import CompanyUserRole
 from organizations.models import Company
+from organizations.rest.serializers.users import UserSerializer
 from sample_manager.models import Buyer
 
 
@@ -32,3 +33,26 @@ class BuyerSerializer(serializers.ModelSerializer):
             company = user.get_company()
         buyer = Buyer.objects.create(company=company, created_by=user, **validated_data)
         return buyer
+
+
+class BuyerHistorySerializer(serializers.ModelSerializer):
+    changed_by = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Buyer.history.model
+        fields = [
+            "id",
+            "name",
+            "street",
+            "city",
+            "state",
+            "country",
+            "status",
+            "history_id",
+            "history_type",
+            "history_date",
+            "changed_by",
+        ]
+
+    def get_changed_by(self, obj):
+        return UserSerializer(obj.history_user).data

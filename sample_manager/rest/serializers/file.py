@@ -10,6 +10,7 @@ from common.serializers import (
     ProjectSlimSerializer,
 )
 from organizations.choices import CompanyUserRole
+from organizations.rest.serializers.users import UserSerializer
 from sample_manager.choices import ActionTypes, StorageType
 from sample_manager.models import (
     Buyer,
@@ -332,3 +333,28 @@ class StorageFileSerializer(serializers.ModelSerializer):
             )
 
         return instance
+
+
+class FileHistorySerializer(serializers.ModelSerializer):
+    changed_by = serializers.SerializerMethodField()
+
+    class Meta:
+        model = File.history.model
+        fields = [
+            "id",
+            "name",
+            "file_id",
+            "comments",
+            "status",
+            "is_active",
+            "storage",
+            "company",
+            "created_by",
+            "history_id",
+            "history_type",
+            "history_date",
+            "changed_by",
+        ]
+
+    def get_changed_by(self, obj):
+        return UserSerializer(obj.history_user).data
