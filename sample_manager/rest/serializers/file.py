@@ -102,7 +102,9 @@ class StorageFileSerializer(serializers.ModelSerializer):
             "image_id", flat=True
         )
         images = Image.objects.filter(id__in=image_ids)
-        return ImageSlimSerializer(images, many=True).data
+        return ImageSlimSerializer(
+            images, many=True, context={"request": self.context["request"]}
+        ).data
 
     def get_notes(self, obj):
         note_ids = FileNote.objects.filter(file=obj).values_list("note_id", flat=True)
