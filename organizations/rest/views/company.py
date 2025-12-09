@@ -1,10 +1,11 @@
 from django.db import transaction
 from rest_framework import status
-from rest_framework.generics import ListCreateAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from common.choices import Status
 from core.models import User
 from organizations.choices import CompanyUserRole
 from organizations.models import Company, UserCompany
@@ -22,11 +23,11 @@ class MyCompanyListCreate(ListCreateAPIView):
         user = self.request.user
         role = user.get_role()
         if role == CompanyUserRole.SUPER_ADMIN:
-            return Company.objects.filter()
+            return Company.objects.filter(status=Status.ACTIVE)
         company_ids = UserCompany.objects.filter(user=user).values_list(
             "company_id", flat=True
         )
-        companys = Company.objects.filter(id__in=company_ids)
+        companys = Company.objects.filter(id__in=company_ids, status=Status.ACTIVE)
         return companys
 
     def get_permissions(self):
@@ -39,6 +40,35 @@ class MyCompanyListCreate(ListCreateAPIView):
             return [IsSuperAdmin()]
 
         return [IsAuthenticated()]
+
+
+class MyCompanyDetailsView(RetrieveUpdateDestroyAPIView):
+    serializer_class = CompanySerializer
+    queryset = Company.objects.filter()
+    lookup_field = "uid"
+
+    def get_permissions(self):
+        method = self.request.method
+
+        if method == "GET":
+            return [IsAuthenticated()]
+
+        if method in ["PUT", "PATCH"]:
+            return [IsAuthenticated()]
+
+        if method == "DELETE":
+            return [IsSuperAdmin()]
+
+        return [IsAuthenticated()]
+
+    def delete(self, request, *args, **kwargs):
+        company = self.get_object()
+        company.status = Status.REMOVED
+        company.save()
+        return Response(
+            {"detail": "Company deleted successfully"},
+            status=status.HTTP_204_NO_CONTENT,
+        )
 
 
 class SwitchCompanyAPIView(APIView):
