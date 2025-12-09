@@ -75,7 +75,7 @@ class StorageFileDetailView(RetrieveUpdateDestroyAPIView):
             raise APIException("Invalid storage uid provided")
         company = self.request.user.get_company()
         return File.objects.filter(
-            company=company, storag=storage, is_active=True, status=Status.ACTIVE
+            company=company, storage=storage, is_active=True, status=Status.ACTIVE
         )
 
     def delete(self, request, *args, **kwargs):
