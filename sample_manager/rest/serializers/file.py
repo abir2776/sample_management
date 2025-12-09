@@ -1,5 +1,5 @@
-from decimal import Decimal
 import json
+from decimal import Decimal
 
 from django.db import transaction
 from rest_framework import serializers
@@ -26,6 +26,7 @@ from sample_manager.models import (
     ProjectFile,
     Storage,
 )
+from sample_manager.rest.serializers.storage import StorageSerializer
 
 
 class StorageFileSerializer(serializers.ModelSerializer):
@@ -63,6 +64,7 @@ class StorageFileSerializer(serializers.ModelSerializer):
     buyers = serializers.SerializerMethodField()
 
     storage_uid = serializers.CharField(write_only=True)
+    storage = StorageSerializer(read_only=True)
 
     class Meta:
         model = File

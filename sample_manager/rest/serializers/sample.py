@@ -25,6 +25,7 @@ from sample_manager.models import (
     SampleNote,
     Storage,
 )
+from sample_manager.rest.serializers.storage import StorageSerializer
 
 
 class SampleSerializer(serializers.ModelSerializer):
@@ -58,6 +59,7 @@ class SampleSerializer(serializers.ModelSerializer):
     projects = serializers.SerializerMethodField()
     notes = serializers.SerializerMethodField()
     storage_uid = serializers.CharField(write_only=True)
+    storage = StorageSerializer(read_only=True)
 
     class Meta:
         model = GarmentSample
