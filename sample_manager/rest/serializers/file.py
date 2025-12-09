@@ -1,4 +1,5 @@
 from decimal import Decimal
+import json
 
 from django.db import transaction
 from rest_framework import serializers
@@ -106,7 +107,7 @@ class StorageFileSerializer(serializers.ModelSerializer):
         notes = Note.objects.filter(id__in=note_ids)
         return NoteSlimSerializer(
             notes, many=True, context={"request": self.context["request"]}
-        )
+        ).data
 
     def get_projects(self, obj):
         project_ids = ProjectFile.objects.filter(file=obj).values_list(
@@ -115,7 +116,7 @@ class StorageFileSerializer(serializers.ModelSerializer):
         projects = Project.objects.filter(id__in=project_ids)
         return ProjectSlimSerializer(
             projects, many=True, context={"request": self.context["request"]}
-        )
+        ).data
 
     def get_buyers(self, obj):
         buyer_ids = FileBuyerConnection.objects.filter(file=obj).values_list(
@@ -148,6 +149,16 @@ class StorageFileSerializer(serializers.ModelSerializer):
         request_data["note_uids"] = note_uids
         request_data["project_uids"] = project_uids
         request_data["buyer_uids"] = buyer_uids
+
+        # Convert to JSON and back to ensure everything is JSON serializable
+        # This will catch any serialization issues early
+        try:
+            json.dumps(request_data)
+        except (TypeError, ValueError) as e:
+            # If there's still an issue, you'll see it here
+            raise serializers.ValidationError(
+                f"Request data is not JSON serializable: {e}"
+            )
 
         return request_data
 
