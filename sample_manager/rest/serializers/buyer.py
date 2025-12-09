@@ -2,12 +2,14 @@ from rest_framework import serializers
 
 from organizations.choices import CompanyUserRole
 from organizations.models import Company
+from organizations.rest.serializers.company import CompanySerializer
 from organizations.rest.serializers.users import UserSerializer
 from sample_manager.models import Buyer
 
 
 class BuyerSerializer(serializers.ModelSerializer):
     company_uid = serializers.CharField(write_only=True, required=False)
+    company = CompanySerializer(read_only=True)
 
     class Meta:
         model = Buyer
