@@ -63,11 +63,11 @@ class GarmentSample(BaseModelWithUID):
     storage = models.ForeignKey(Storage, on_delete=models.CASCADE)
     sample_id = models.CharField(max_length=255)
     created_by = models.ForeignKey("core.User", on_delete=models.CASCADE)
-    arrival_date = models.DateTimeField()
-    style_no = models.CharField(max_length=255)
-    sku_no = models.CharField(max_length=255)
-    item = models.CharField(max_length=255)
-    fabrication = models.CharField(max_length=255)
+    arrival_date = models.DateTimeField(null=True, blank=True)
+    style_no = models.CharField(max_length=255, null=True, blank=True)
+    sku_no = models.CharField(max_length=255, null=True, blank=True)
+    item = models.CharField(max_length=255, null=True, blank=True)
+    fabrication = models.CharField(max_length=255, null=True, blank=True)
     weight = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     weight_type = models.CharField(
         max_length=20,
@@ -76,8 +76,10 @@ class GarmentSample(BaseModelWithUID):
         null=True,
         blank=True,
     )
-    color = models.CharField(max_length=255)
-    size = models.CharField(max_length=255)
+    gsm = models.ImageField(null=True, blank=True)
+    size_range = models.CharField(max_length=255, null=True, blank=True)
+    color = models.CharField(max_length=255, null=True, blank=True)
+    size = models.CharField(max_length=255, null=True, blank=True)
     size_cen = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True
     )
@@ -89,8 +91,8 @@ class GarmentSample(BaseModelWithUID):
     )
     comments = models.CharField(max_length=500, null=True, blank=True)
     company = models.ForeignKey("organizations.Company", on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)
-    description = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, null=True, blank=True)
+    description = models.CharField(max_length=255, null=True, blank=True)
     status = models.CharField(
         max_length=20,
         choices=SampleStatus.choices,
