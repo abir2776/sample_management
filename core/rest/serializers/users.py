@@ -7,6 +7,7 @@ from organizations.rest.serializers.company import CompanySerializer
 class UserSerializer(serializers.ModelSerializer):
     role = serializers.SerializerMethodField()
     company = serializers.SerializerMethodField()
+    password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
