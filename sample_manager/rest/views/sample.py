@@ -11,6 +11,7 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.generics import (
     ListAPIView,
     ListCreateAPIView,
+    RetrieveAPIView,
     RetrieveUpdateDestroyAPIView,
 )
 from rest_framework.permissions import OR, IsAuthenticated
@@ -109,7 +110,7 @@ class SampleDetailView(RetrieveUpdateDestroyAPIView):
         )
 
 
-class SampleListView(ListCreateAPIView):
+class SampleListView(ListAPIView):
     serializer_class = SampleSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = GarmentSampleFilter
@@ -137,7 +138,7 @@ class SampleListView(ListCreateAPIView):
         return [IsAuthenticated()]
 
 
-class SampleSearchDetailView(RetrieveUpdateDestroyAPIView):
+class SampleSearchDetailView(RetrieveAPIView):
     serializer_class = SampleSerializer
     lookup_field = "uid"
 
