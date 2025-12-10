@@ -91,10 +91,10 @@ class CompanyUserSerializer(serializers.ModelSerializer):
         if email:
             instance.user.email = email
             instance.user.username = email
-        phone = validated_data.pop("phone")
+        phone = validated_data.pop("phone", None)
         if phone:
             instance.user.phone = phone
-        password = validated_data.pop("password")
+        password = validated_data.pop("password", None)
         if password:
             instance.user.set_password(password)
         instance.user.save()
