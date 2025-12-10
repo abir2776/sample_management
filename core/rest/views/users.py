@@ -1,11 +1,11 @@
 from rest_framework.generics import (
-    RetrieveAPIView,
+    RetrieveUpdateAPIView,
 )
 
 from core.rest.serializers.users import UserSerializer
 
 
-class UserProfileView(RetrieveAPIView):
+class UserProfileView(RetrieveUpdateAPIView):
     serializer_class = UserSerializer
 
     def get_object(self):

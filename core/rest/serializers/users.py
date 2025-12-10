@@ -20,9 +20,31 @@ class UserSerializer(serializers.ModelSerializer):
         company = self.context["request"].user.get_company()
         return CompanySerializer(company).data
 
+    def validate_email(self, data):
+        email = data.lower()
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError("User with email already exists!")
+        return data
+
+    def validate_phone(self, data):
+        phone = data
+        if User.objects.filter(phone=phone).exists():
+            raise serializers.ValidationError("User with phone already exists!")
+        return data
+
     def create(self, validated_data):
         password = validated_data.pop("password")
         user = User.objects.create(**validated_data)
         user.set_password(password)
         user.save()
         return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop("password", None)
+        email = validated_data.get("email", None)
+        if password:
+            instance.set_password(password)
+        if email:
+            instance.username = email
+        instance.save()
+        return super().update(instance, validated_data)
