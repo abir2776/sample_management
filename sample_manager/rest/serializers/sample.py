@@ -410,3 +410,31 @@ class GarmentSampleHistorySerializer(serializers.ModelSerializer):
 
     def get_changed_by(self, obj):
         return UserSerializer(obj.history_user).data
+
+
+class SampleUploadSerializer(serializers.Serializer):
+    file = serializers.FileField(
+        help_text="Excel file (.xlsx or .xls) containing garment samples"
+    )
+    storage_uid = serializers.CharField(
+        max_length=255, help_text="UID of the storage space"
+    )
+
+    def validate_file(self, value):
+        """Validate uploaded file is an Excel file"""
+        if not value.name.endswith((".xlsx", ".xls")):
+            raise serializers.ValidationError(
+                "Invalid file format. Please upload an Excel file (.xlsx or .xls)"
+            )
+        return value
+
+
+class SampleUploadResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField()
+    message = serializers.CharField()
+    total_rows_processed = serializers.IntegerField()
+    samples_created = serializers.IntegerField()
+    samples_skipped = serializers.IntegerField()
+    errors = serializers.IntegerField()
+    unique_colors = serializers.ListField(child=serializers.CharField())
+    error_details = serializers.ListField(child=serializers.DictField(), required=False)

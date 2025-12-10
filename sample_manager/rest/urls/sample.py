@@ -5,6 +5,7 @@ from sample_manager.rest.views.sample import (
     SampleListCreateView,
     SampleListView,
     SampleSearchDetailView,
+    SampleUploadView,
 )
 
 urlpatterns = [
@@ -22,4 +23,5 @@ urlpatterns = [
         SampleSearchDetailView.as_view(),
         name="sample-details",
     ),
+    path("upload", SampleUploadView.as_view(), name="sample-upload"),
 ]
