@@ -1,5 +1,7 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.exceptions import APIException
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.generics import (
     ListAPIView,
     ListCreateAPIView,
@@ -15,6 +17,7 @@ from sample_manager.permissions import (
     IsAdministrator,
     IsSuperAdmin,
 )
+from sample_manager.rest.filters.sample_filter import GarmentSampleFilter
 from sample_manager.rest.serializers.sample import (
     GarmentSampleHistorySerializer,
     SampleSerializer,
@@ -23,6 +26,11 @@ from sample_manager.rest.serializers.sample import (
 
 class SampleListCreateView(ListCreateAPIView):
     serializer_class = SampleSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = GarmentSampleFilter
+    search_fields = ["name", "style_no", "sku_no", "fabrication"]
+    ordering_fields = ["name", "arrival_date", "color"]
+    ordering = ["created_at"]
 
     def get_queryset(self):
         storage_uid = self.kwargs.get("storage_uid")

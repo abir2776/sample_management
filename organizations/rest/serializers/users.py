@@ -90,6 +90,7 @@ class CompanyUserSerializer(serializers.ModelSerializer):
         email = validated_data.pop("email", None)
         if email:
             instance.user.email = email
+            instance.user.username = email
         phone = validated_data.pop("phone")
         if phone:
             instance.user.phone = phone
@@ -162,9 +163,24 @@ class AdminUserDetailsSerializer(serializers.ModelSerializer):
         model = User
         fields = ["first_name", "last_name", "email", "phone", "password"]
 
+    def validate_email(self, data):
+        email = data.lower()
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError("User with email already exists!")
+        return data
+
+    def validate_phone(self, data):
+        phone = data
+        if User.objects.filter(phone=phone).exists():
+            raise serializers.ValidationError("User with phone already exists!")
+        return data
+
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
+        email = validated_data.get("email", None)
         if password:
             instance.set_password(password)
+        if email:
+            instance.username = email
         instance.save()
         return super().update(instance, validated_data)

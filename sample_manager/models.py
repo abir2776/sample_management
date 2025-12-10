@@ -78,6 +78,9 @@ class GarmentSample(BaseModelWithUID):
     )
     color = models.CharField(max_length=255)
     size = models.CharField(max_length=255)
+    size_cen = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
     size_type = models.CharField(
         max_length=20, choices=SizeType.choices, default=SizeType.LETTER
     )

@@ -11,7 +11,7 @@ from common.serializers import (
 )
 from organizations.choices import CompanyUserRole
 from organizations.rest.serializers.users import UserSerializer
-from sample_manager.choices import ActionTypes, StorageType
+from sample_manager.choices import ActionTypes, SizeType, StorageType, WeightType
 from sample_manager.models import (
     Buyer,
     GarmentSample,
@@ -80,6 +80,7 @@ class SampleSerializer(serializers.ModelSerializer):
             "types",
             "color",
             "size",
+            "size_cen",
             "types",
             "comments",
             "company",
@@ -98,6 +99,7 @@ class SampleSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             "storage",
+            "size_cen",
             "id",
             "uid",
             "created_by",
@@ -176,6 +178,10 @@ class SampleSerializer(serializers.ModelSerializer):
         buyer_uids = validated_data.pop("buyer_uids", [])
         project_uids = validated_data.pop("project_uids", [])
         note_uids = validated_data.pop("note_uids", [])
+        weight_type = validated_data.get("weight_type")
+        weight = validated_data.get("weight")
+        size_type = validated_data.get("size_type")
+        size = validated_data.get("size")
 
         user = self.context["request"].user
         company = user.get_company()
@@ -183,6 +189,12 @@ class SampleSerializer(serializers.ModelSerializer):
         buyers = Buyer.objects.filter(uid__in=buyer_uids)
         projects = Project.objects.filter(uid__in=project_uids)
         notes = Note.objects.filter(uid__in=note_uids)
+
+        if weight_type == WeightType.KG and weight is not None:
+            validated_data["weight"] = Decimal(weight * 1000)
+
+        if size_type == SizeType.CENTIMETER and size is not None:
+            validated_data["size_cen"] = Decimal(str(size))
 
         storage = Storage.objects.filter(
             uid=storage_uid, type=StorageType.SPACE
@@ -245,6 +257,17 @@ class SampleSerializer(serializers.ModelSerializer):
         buyer_uids = validated_data.pop("buyer_uids", None)
         project_uids = validated_data.pop("project_uids", None)
         note_uids = validated_data.pop("note_uids", None)
+
+        weight_type = validated_data.get("weight_type")
+        weight = validated_data.get("weight")
+        size_type = validated_data.get("size_type")
+        size = validated_data.get("size")
+
+        if weight_type == WeightType.KG and weight is not None:
+            validated_data["weight"] = Decimal(weight * 1000)
+
+        if size_type == SizeType.CENTIMETER and size is not None:
+            validated_data["size_cen"] = Decimal(str(size))
 
         user = self.context["request"].user
         company = user.get_company()

@@ -82,7 +82,6 @@ class UserCompany(BaseModelWithUID):
 
     def can_manage_user(self, target_user_role):
         temp = CompanyUserRole.can_manage(self.role, target_user_role)
-        print(temp)
         return temp
 
     def validate_role_permission(self, target_user_role, action="manage"):
