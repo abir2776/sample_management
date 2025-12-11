@@ -9,6 +9,7 @@ class GarmentSampleFilter(filters.FilterSet):
     size_cen_min = filters.NumberFilter(field_name="size_cen", lookup_expr="gte")
     size_cen_max = filters.NumberFilter(field_name="size_cen", lookup_expr="lte")
     color = filters.CharFilter(field_name="color", lookup_expr="iexact")
+    size = filters.CharFilter(field_name="size", lookup_expr="iexact")
     types = filters.CharFilter(field_name="types", lookup_expr="iexact")
     buyer = filters.CharFilter(method="filter_by_buyer")
     project = filters.CharFilter(method="filter_by_project")
@@ -17,6 +18,7 @@ class GarmentSampleFilter(filters.FilterSet):
         model = GarmentSample
         fields = [
             "color",
+            "size",
             "types",
             "weight_min",
             "weight_max",
