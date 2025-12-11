@@ -6,11 +6,13 @@ from common.models import BaseModelWithUID
 
 from .choices import (
     ActionTypes,
+    MainCategoryChoices,
     ModifyRequestStatus,
     SampleStatus,
     SampleTypes,
     SizeType,
     StorageType,
+    SubCategoryChoices,
     WeightType,
 )
 
@@ -88,6 +90,12 @@ class GarmentSample(BaseModelWithUID):
     )
     types = models.CharField(
         max_length=20, choices=SampleTypes.choices, null=True, blank=True
+    )
+    category = models.CharField(
+        max_length=20, choices=MainCategoryChoices.choices, null=True, blank=True
+    )
+    sub_category = models.CharField(
+        max_length=20, choices=SubCategoryChoices.choices, null=True, blank=True
     )
     comments = models.CharField(max_length=500, null=True, blank=True)
     company = models.ForeignKey("organizations.Company", on_delete=models.CASCADE)

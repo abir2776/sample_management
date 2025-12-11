@@ -25,6 +25,8 @@ class GarmentSampleFilter(filters.FilterSet):
             "size_cen_min",
             "size_cen_max",
             "buyer",
+            "category",
+            "sub_category",
             "project",
         ]
 

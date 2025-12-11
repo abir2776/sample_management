@@ -95,6 +95,8 @@ class SampleSerializer(serializers.ModelSerializer):
             "project_uids",
             "projects",
             "note_uids",
+            "category",
+            "sub_category",
             "notes",
         ]
         read_only_fields = [
