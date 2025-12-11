@@ -1,4 +1,5 @@
 from rest_framework import status
+from rest_framework.filters import SearchFilter
 from rest_framework.generics import (
     ListAPIView,
     ListCreateAPIView,
@@ -19,6 +20,8 @@ from sample_manager.rest.serializers.buyer import (
 
 class BuyerListCreateView(ListCreateAPIView):
     serializer_class = BuyerSerializer
+    filter_backends = [SearchFilter]
+    search_fields = ["name"]
 
     def get_queryset(self):
         role = self.request.user.get_role()
