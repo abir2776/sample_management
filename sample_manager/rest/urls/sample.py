@@ -17,11 +17,11 @@ urlpatterns = [
         SampleDetailView.as_view(),
         name="sample-details",
     ),
-    path("", SampleListView.as_view(), name="sample-list-create"),
+    path("", SampleListView.as_view(), name="sample-serach-list"),
     path(
         "search/<uuid:uid>",
         SampleSearchDetailView.as_view(),
-        name="sample-details",
+        name="sample-serch-details",
     ),
     path("upload", SampleUploadView.as_view(), name="sample-upload"),
 ]

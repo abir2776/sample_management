@@ -127,14 +127,6 @@ class SampleListView(ListAPIView):
         )
 
     def get_permissions(self):
-        method = self.request.method
-
-        if method == "GET":
-            return [IsAuthenticated()]
-
-        if method == "POST":
-            return [IsAuthenticated()]
-
         return [IsAuthenticated()]
 
 
@@ -143,17 +135,6 @@ class SampleSearchDetailView(RetrieveAPIView):
     lookup_field = "uid"
 
     def get_permissions(self):
-        method = self.request.method
-
-        if method == "GET":
-            return [IsAuthenticated()]
-
-        if method in ["PUT", "PATCH"]:
-            return [IsAuthenticated()]
-
-        if method == "DELETE":
-            return [OR(IsSuperAdmin(), IsAdministrator())]
-
         return [IsAuthenticated()]
 
     def get_queryset(self):
@@ -162,14 +143,6 @@ class SampleSearchDetailView(RetrieveAPIView):
             company=company,
             is_active=True,
             status=Status.ACTIVE,
-        )
-
-    def delete(self, request, *args, **kwargs):
-        sample = self.get_object()
-        sample.status = Status.REMOVED
-        sample.save()
-        return Response(
-            {"detail": "Sample deleted successfully"}, status=status.HTTP_204_NO_CONTENT
         )
 
 

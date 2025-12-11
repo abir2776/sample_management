@@ -4,6 +4,7 @@ from rest_framework.filters import SearchFilter
 from rest_framework.generics import (
     ListAPIView,
     ListCreateAPIView,
+    RetrieveAPIView,
     RetrieveUpdateDestroyAPIView,
 )
 from rest_framework.permissions import OR, IsAuthenticated
@@ -87,6 +88,35 @@ class StorageFileDetailView(RetrieveUpdateDestroyAPIView):
         file.save()
         return Response(
             {"detail": "File deleted successfully"}, status=status.HTTP_204_NO_CONTENT
+        )
+
+
+class StorageFileSearchListView(ListAPIView):
+    serializer_class = StorageFileSerializer
+    filter_backends = [SearchFilter]
+    search_fields = ["name"]
+
+    def get_queryset(self):
+        company = self.request.user.get_company()
+        return File.objects.filter(
+            company=company, is_active=True, status=Status.ACTIVE
+        )
+
+    def get_permissions(self):
+        return [IsAuthenticated()]
+
+
+class StorageFileSearchDetailView(RetrieveAPIView):
+    serializer_class = StorageFileSerializer
+    lookup_field = "uid"
+
+    def get_permissions(self):
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        company = self.request.user.get_company()
+        return File.objects.filter(
+            company=company, is_active=True, status=Status.ACTIVE
         )
 
 
