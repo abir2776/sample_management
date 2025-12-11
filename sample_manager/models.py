@@ -70,7 +70,9 @@ class GarmentSample(BaseModelWithUID):
     sku_no = models.CharField(max_length=255, null=True, blank=True)
     item = models.CharField(max_length=255, null=True, blank=True)
     fabrication = models.CharField(max_length=255, null=True, blank=True)
-    weight = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    weight = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True, default=0
+    )
     weight_type = models.CharField(
         max_length=20,
         choices=WeightType.choices,
