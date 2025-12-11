@@ -1,5 +1,6 @@
 from rest_framework import status
 from rest_framework.exceptions import APIException
+from rest_framework.filters import SearchFilter
 from rest_framework.generics import (
     ListAPIView,
     ListCreateAPIView,
@@ -23,6 +24,8 @@ from sample_manager.rest.serializers.file import (
 
 class StorageFileListCreateView(ListCreateAPIView):
     serializer_class = StorageFileSerializer
+    filter_backends = [SearchFilter]
+    search_fields = ["name"]
 
     def get_queryset(self):
         storage_uid = self.kwargs.get("storage_uid")
