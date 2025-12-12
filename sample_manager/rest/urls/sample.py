@@ -1,6 +1,7 @@
 from django.urls import path
 
 from sample_manager.rest.views.sample import (
+    PublicSampleListView,
     SampleDetailView,
     SampleListCreateView,
     SampleListView,
@@ -18,6 +19,7 @@ urlpatterns = [
         name="sample-details",
     ),
     path("", SampleListView.as_view(), name="sample-serach-list"),
+    path("", PublicSampleListView.as_view(), name="public-sample-list"),
     path(
         "search/<uuid:uid>",
         SampleSearchDetailView.as_view(),

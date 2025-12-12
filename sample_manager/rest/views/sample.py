@@ -14,7 +14,7 @@ from rest_framework.generics import (
     RetrieveAPIView,
     RetrieveUpdateDestroyAPIView,
 )
-from rest_framework.permissions import OR, IsAuthenticated
+from rest_framework.permissions import OR, AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -395,3 +395,14 @@ class SampleUploadView(APIView):
             "message": message,
             "error_details": error_details,
         }
+
+
+class PublicSampleListView(ListAPIView):
+    serializer_class = SampleSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    permission_classes = [AllowAny]
+    filterset_class = GarmentSampleFilter
+    search_fields = ["name", "style_no", "sku_no", "fabrication"]
+    ordering_fields = ["name", "arrival_date", "color"]
+    ordering = ["created_at"]
+    queryset = GarmentSample.objects.filter()
