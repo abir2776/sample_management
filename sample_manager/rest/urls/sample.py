@@ -19,7 +19,7 @@ urlpatterns = [
         name="sample-details",
     ),
     path("", SampleListView.as_view(), name="sample-serach-list"),
-    path("", PublicSampleListView.as_view(), name="public-sample-list"),
+    path("public", PublicSampleListView.as_view(), name="public-sample-list"),
     path(
         "search/<uuid:uid>",
         SampleSearchDetailView.as_view(),
