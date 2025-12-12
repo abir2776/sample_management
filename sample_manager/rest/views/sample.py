@@ -406,3 +406,10 @@ class PublicSampleListView(ListAPIView):
     ordering_fields = ["name", "arrival_date", "color"]
     ordering = ["created_at"]
     queryset = GarmentSample.objects.filter()
+
+
+class PublicSampleSearchDetailView(RetrieveAPIView):
+    serializer_class = SampleSerializer
+    permission_classes = [AllowAny]
+    lookup_field = "uid"
+    queryset = GarmentSample.objects.filter()
