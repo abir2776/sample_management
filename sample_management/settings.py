@@ -169,3 +169,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 ALLOWED_HOSTS = ["*"]
 CORS_ALLOW_ALL_ORIGINS = True
 APPEND_SLASH = False
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://apis.venotel.com",
+]
