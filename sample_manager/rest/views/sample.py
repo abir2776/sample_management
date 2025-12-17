@@ -19,7 +19,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from common.choices import Status
-from sample_manager.choices import SampleStatus, StorageType
+from sample_manager.choices import (
+    MainCategoryChoices,
+    SampleStatus,
+    StorageType,
+    SubCategoryChoices,
+)
 from sample_manager.models import GarmentSample, Image, SampleImage, Storage
 from sample_manager.permissions import (
     IsAdministrator,
@@ -227,6 +232,37 @@ class SampleUploadView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
+    def normalize_category_value(self, value, choices_class):
+        """
+        Normalize category value to match Django choices
+
+        Args:
+            value: Raw value from Excel
+            choices_class: Django choices class (MainCategoryChoices or SubCategoryChoices)
+
+        Returns:
+            Normalized choice value or None
+        """
+        if not value:
+            return None
+
+        # Convert to string and normalize
+        normalized = str(value).strip().upper().replace(" ", "_").replace("-", "_")
+
+        # Check if it matches any choice value
+        valid_choices = [choice[0] for choice in choices_class.choices]
+
+        if normalized in valid_choices:
+            return normalized
+
+        # Try to match by label (case-insensitive)
+        value_lower = str(value).strip().lower()
+        for choice_value, choice_label in choices_class.choices:
+            if choice_label.lower() == value_lower:
+                return choice_value
+
+        return None
+
     def process_excel_file(self, file, storage, user, company):
         """Process uploaded Excel file and create samples"""
         created_count = 0
@@ -263,6 +299,8 @@ class SampleUploadView(APIView):
             "COLOUR",
             "COLOR",
             "SIZE",
+            "CATEGORY",
+            "SUB",
         ]
         is_header_row = any(
             keyword in first_row_sample_id or keyword in first_row_style
@@ -284,6 +322,8 @@ class SampleUploadView(APIView):
                     gsm_value = sheet[f"F{row_num}"].value
                     color = sheet[f"G{row_num}"].value
                     size_range = sheet[f"H{row_num}"].value
+                    category = sheet[f"I{row_num}"].value
+                    sub_category = sheet[f"J{row_num}"].value
 
                     # Skip empty rows
                     if not sample_id and not style_no:
@@ -294,6 +334,14 @@ class SampleUploadView(APIView):
                     color_str = str(color).strip() if color else ""
                     if color_str:
                         unique_colors.add(color_str)
+
+                    # Process category fields
+                    category_value = self.normalize_category_value(
+                        category, MainCategoryChoices
+                    )
+                    sub_category_value = self.normalize_category_value(
+                        sub_category, SubCategoryChoices
+                    )
 
                     # Check if sample already exists
                     if GarmentSample.objects.filter(
@@ -320,6 +368,8 @@ class SampleUploadView(APIView):
                         fabrication=str(fabrication) if fabrication else "",
                         color=color_str,
                         size_range=str(size_range) if size_range else "",
+                        category=category_value,
+                        sub_category=sub_category_value,
                         status=SampleStatus.ACTIVE,
                         is_active=True,
                     )
