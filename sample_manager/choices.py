@@ -63,3 +63,5 @@ class SubCategoryChoices(models.TextChoices):
     SENIOR_GIRLS = "SENIOR_GIRLS", "Senior Girls"
     TODDLER_GIRLS = "TODDLER_GIRLS", "Toddler Girls"
     KIDS = "KIDS", "Kids"
+    DENIM = "DENIM", "Denim"
+    NON_DENIM = "NON_DENIM", "Non Denim"
