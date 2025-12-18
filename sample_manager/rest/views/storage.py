@@ -34,11 +34,14 @@ class StorageListCreateView(ListCreateAPIView):
     def get_queryset(self):
         request = self.request
         parent_uid = request.query_params.get("parent_uid")
+        search = request.query_params.get("search", None)
         company = request.user.get_company()
         role = request.user.get_role()
         base_queryset = Storage.objects.all()
         if role != CompanyUserRole.SUPER_ADMIN:
             base_queryset = base_queryset.filter(company=company, status=Status.ACTIVE)
+        if search:
+            return base_queryset.filter(status=Status.ACTIVE)
         if parent_uid:
             return base_queryset.filter(parent__uid=parent_uid, status=Status.ACTIVE)
         return base_queryset.filter(parent__isnull=True, status=Status.ACTIVE)
