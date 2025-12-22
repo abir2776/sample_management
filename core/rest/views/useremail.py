@@ -20,12 +20,13 @@ class ContactFormAPIView(APIView):
             email = serializer.validated_data["email"]
             subject = serializer.validated_data["subject"]
             message = serializer.validated_data["message"]
+            to_email = serializer.validated_data["to_email"]
             phone = serializer.validated_data.get("phone", "")
             context = {"name": name, "email": email, "message": message, "phone": phone}
             try:
                 send_email_task.delay(
                     subject=f"Contact Form: {subject}",
-                    recipient="osmangoni255@gmail.com",
+                    recipient=to_email,
                     template_name="emails/contact_form.html",
                     context=context,
                 )
