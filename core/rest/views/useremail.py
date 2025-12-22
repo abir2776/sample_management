@@ -5,10 +5,12 @@ from rest_framework.views import APIView
 
 from common.tasks import send_email_task
 from core.rest.serializers.useremail import ContactFormSerializer
+from core.throttling import SingleAPIViewThrottle
 
 
 class ContactFormAPIView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [SingleAPIViewThrottle]
 
     def post(self, request):
         serializer = ContactFormSerializer(data=request.data)
@@ -18,11 +20,8 @@ class ContactFormAPIView(APIView):
             email = serializer.validated_data["email"]
             subject = serializer.validated_data["subject"]
             message = serializer.validated_data["message"]
-            context = {
-                "name": name,
-                "email": email,
-                "message": message,
-            }
+            phone = serializer.validated_data.get("phone", "")
+            context = {"name": name, "email": email, "message": message, "phone": phone}
             try:
                 send_email_task.delay(
                     subject=f"Contact Form: {subject}",

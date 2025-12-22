@@ -6,6 +6,7 @@ class ContactFormSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     subject = serializers.CharField(max_length=500, required=True)
     message = serializers.CharField(required=True)
+    phone = serializers.CharField(required=False)
 
     def validate_name(self, value):
         if len(value.strip()) < 2:
