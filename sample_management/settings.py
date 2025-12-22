@@ -173,3 +173,21 @@ APPEND_SLASH = False
 CSRF_TRUSTED_ORIGINS = [
     "https://apis.venotel.com",
 ]
+
+# Celery Configuration Options
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+
+# Optional settings
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
+
+# Email settings
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND")
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+SENDGRID_SANDBOX_MODE_IN_DEBUG = (
+    os.getenv("SENDGRID_SANDBOX_MODE_IN_DEBUG", "False").lower() == "true"
+)
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")

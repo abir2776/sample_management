@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Form Submission</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #1a5f3a;
+            color: #ffffff;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .field {
+            margin-bottom: 25px;
+        }
+        .field-label {
+            font-size: 12px;
+            color: #666666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .field-value {
+            font-size: 16px;
+            color: #333333;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+        .message-box {
+            background-color: #f9f9f9;
+            border-left: 4px solid #1a5f3a;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .footer {
+            background-color: #f4f4f4;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666666;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>New Contact Form Submission</h1>
+        </div>
+        
+        <div class="content">
+            <div class="field">
+                <div class="field-label">Name</div>
+                <div class="field-value">{{name}}</div>
+            </div>
+            
+            <div class="field">
+                <div class="field-label">Email</div>
+                <div class="field-value">{{email}}</div>
+            </div>
+            
+            <div class="field">
+                <div class="field-label">Message</div>
+                <div class="message-box">
+                    <div class="field-value">{{message}}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>This email was sent from the AIMAN Design Ltd contact form</p>
+        </div>
+    </div>
+</body>
+</html>
