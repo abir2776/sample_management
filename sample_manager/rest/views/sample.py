@@ -372,6 +372,8 @@ class SampleUploadView(APIView):
                         sub_category=sub_category_value,
                         status=SampleStatus.ACTIVE,
                         is_active=True,
+                        weight_type="GSM",
+                        weight=gsm_value,
                     )
 
                     # Handle image from Excel
