@@ -9,6 +9,7 @@ class StorageType(models.TextChoices):
 class WeightType(models.TextChoices):
     GM = "GM", "Gm"
     KG = "KG", "Kg"
+    GSM = "GSM", "GSM"
 
 
 class SizeType(models.TextChoices):

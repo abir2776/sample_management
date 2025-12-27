@@ -15,6 +15,8 @@ class GarmentSampleFilter(filters.FilterSet):
     types = filters.CharFilter(field_name="types", lookup_expr="iexact")
     buyer = filters.CharFilter(method="filter_by_buyer")
     project = filters.CharFilter(method="filter_by_project")
+    age_range_min = filters.NumberFilter(method="filter_by_age_range_min")
+    age_range_max = filters.NumberFilter(method="filter_by_age_range_max")
 
     class Meta:
         model = GarmentSample
@@ -30,6 +32,8 @@ class GarmentSampleFilter(filters.FilterSet):
             "category",
             "sub_category",
             "project",
+            "age_range_min",
+            "age_range_max",
         ]
 
     def filter_by_buyer(self, queryset, name, value):
@@ -47,3 +51,43 @@ class GarmentSampleFilter(filters.FilterSet):
             "sample_id", flat=True
         )
         return queryset.filter(id__in=sample_ids)
+
+    def filter_by_age_range_min(self, queryset, name, value):
+        """
+        Filter samples where the size_range maximum is >= the given minimum age.
+        Example: if age_range_min=5, includes "4-10 Y" (max=10 >= 5)
+        """
+        import re
+
+        filtered_ids = []
+        for sample in queryset:
+            if sample.size_range:
+                # Extract numbers from size_range (e.g., "4-10 Y" -> [4, 10])
+                numbers = re.findall(r"\d+", sample.size_range)
+                if numbers:
+                    # Get the maximum value from the range
+                    max_age = max(int(num) for num in numbers)
+                    if max_age >= value:
+                        filtered_ids.append(sample.id)
+
+        return queryset.filter(id__in=filtered_ids)
+
+    def filter_by_age_range_max(self, queryset, name, value):
+        """
+        Filter samples where the size_range minimum is <= the given maximum age.
+        Example: if age_range_max=8, includes "4-10 Y" (min=4 <= 8)
+        """
+        import re
+
+        filtered_ids = []
+        for sample in queryset:
+            if sample.size_range:
+                # Extract numbers from size_range (e.g., "4-10 Y" -> [4, 10])
+                numbers = re.findall(r"\d+", sample.size_range)
+                if numbers:
+                    # Get the minimum value from the range
+                    min_age = min(int(num) for num in numbers)
+                    if min_age <= value:
+                        filtered_ids.append(sample.id)
+
+        return queryset.filter(id__in=filtered_ids)
