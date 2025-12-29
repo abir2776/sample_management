@@ -77,6 +77,7 @@ class SampleSerializer(serializers.ModelSerializer):
             "weight",
             "weight_type",
             "size_type",
+            "size_range",
             "types",
             "color",
             "size",
