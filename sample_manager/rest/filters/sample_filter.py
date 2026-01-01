@@ -28,7 +28,7 @@ class GarmentSampleFilter(filters.FilterSet):
         field_name="letter_range_max", lookup_expr="gte"
     )
     letter_range_min = filters.CharFilter(
-        field_name="letter_range_max", lookup_expr="lte"
+        field_name="letter_range_min", lookup_expr="lte"
     )
 
     class Meta:
