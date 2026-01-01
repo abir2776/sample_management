@@ -24,10 +24,10 @@ class GarmentSampleFilter(filters.FilterSet):
     types = filters.CharFilter(field_name="types", lookup_expr="iexact")
     buyer = filters.CharFilter(method="filter_by_buyer")
     project = filters.CharFilter(method="filter_by_project")
-    letter_range_max = filters.CharFilter(
+    letter_range_max = filters.NumberFilter(
         field_name="letter_range_max", lookup_expr="gte"
     )
-    letter_range_min = filters.CharFilter(
+    letter_range_min = filters.NumberFilter(
         field_name="letter_range_min", lookup_expr="lte"
     )
 
