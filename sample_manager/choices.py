@@ -12,9 +12,10 @@ class WeightType(models.TextChoices):
     GSM = "GSM", "GSM"
 
 
-class SizeType(models.TextChoices):
-    CENTIMETER = "CENTIMETER", "Centimeter"
-    LETTER = "LETTER", "Letter"
+class SizeRangeChoices(models.TextChoices):
+    LETTER_RANGE = "LETTER_RANGE", "Letter Range"
+    AGE_RANGE_YEAR = "AGE_RANGE_YEAR", "Age Range Year"
+    AGE_RANGE_MONTH = "AGE_RANGE_MONTH","Age Range Month"
 
 
 class SampleTypes(models.TextChoices):

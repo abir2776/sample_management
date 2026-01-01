@@ -10,7 +10,7 @@ from .choices import (
     ModifyRequestStatus,
     SampleStatus,
     SampleTypes,
-    SizeType,
+    SizeRangeChoices,
     StorageType,
     SubCategoryChoices,
     WeightType,
@@ -80,16 +80,16 @@ class GarmentSample(BaseModelWithUID):
         null=True,
         blank=True,
     )
-    gsm = models.ImageField(null=True, blank=True)
-    size_range = models.CharField(max_length=255, null=True, blank=True)
     color = models.CharField(max_length=255, null=True, blank=True)
-    size = models.CharField(max_length=255, null=True, blank=True)
-    size_cen = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True
+    size_range_type = models.CharField(
+        max_length=20, choices=SizeRangeChoices.choices, default=SizeRangeChoices.LETTER_RANGE
     )
-    size_type = models.CharField(
-        max_length=20, choices=SizeType.choices, default=SizeType.LETTER
-    )
+    letter_range_max = models.CharField(null=True,blank=True,max_length=20)
+    letter_range_min = models.CharField(null=True,blank=True,max_length=20)
+    age_range_year_max = models.IntegerField(null=True,blank=True)
+    age_range_year_min = models.IntegerField(null=True,blank=True)
+    age_range_month_max = models.IntegerField(null=True,blank=True)
+    age_range_month_min = models.IntegerField(null=True,blank=True)
     types = models.CharField(
         max_length=20, choices=SampleTypes.choices, null=True, blank=True
     )
