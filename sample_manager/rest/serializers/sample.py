@@ -11,7 +11,7 @@ from common.serializers import (
 )
 from organizations.choices import CompanyUserRole
 from organizations.rest.serializers.users import UserSerializer
-from sample_manager.choices import ActionTypes, StorageType, WeightType
+from sample_manager.choices import ActionTypes, StorageType, WeightType,SizeRangeChoices
 from sample_manager.models import (
     Buyer,
     GarmentSample,
@@ -210,7 +210,9 @@ class SampleSerializer(serializers.ModelSerializer):
 
         if weight_type == WeightType.KG and weight is not None:
             validated_data["weight"] = Decimal(weight * 1000)
-        if size_range_type == "LETTER_RANGE":
+        if size_range_type == SizeRangeChoices.LETTER_RANGE:
+            validated_data.pop("letter_range_max")
+            validated_data.pop("letter_range_min")
             validated_data["letter_range_max"] = self.SIZE_ORDER.get(
                 validated_data["letter_range_max"]
             )
@@ -287,7 +289,9 @@ class SampleSerializer(serializers.ModelSerializer):
         if weight_type == WeightType.KG and weight is not None:
             validated_data["weight"] = Decimal(weight * 1000)
 
-        if size_range_type == "LETTER_RANGE":
+        if size_range_type == SizeRangeChoices.LETTER_RANGE:
+            validated_data.pop("letter_range_max")
+            validated_data.pop("letter_range_min")
             validated_data["letter_range_max"] = self.SIZE_ORDER.get(
                 validated_data["letter_range_max"]
             )
