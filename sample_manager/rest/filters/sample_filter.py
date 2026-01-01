@@ -7,16 +7,16 @@ class GarmentSampleFilter(filters.FilterSet):
     weight_min = filters.NumberFilter(field_name="weight", lookup_expr="gte")
     weight_max = filters.NumberFilter(field_name="weight", lookup_expr="lte")
     age_range_year_max = filters.NumberFilter(
-        field_name="age_range_year_max", lookup_expr="lte"
+        field_name="age_range_year_max", lookup_expr="gte"
     )
     age_range_year_min = filters.NumberFilter(
-        field_name="age_range_year_min", lookup_expr="gte"
+        field_name="age_range_year_min", lookup_expr="lte"
     )
     age_range_month_max = filters.NumberFilter(
-        field_name="age_range_month_max", lookup_expr="lte"
+        field_name="age_range_month_max", lookup_expr="gte"
     )
     age_range_month_min = filters.NumberFilter(
-        field_name="age_range_month_min", lookup_expr="gte"
+        field_name="age_range_month_min", lookup_expr="lte"
     )
     color = filters.CharFilter(field_name="color", lookup_expr="iexact")
     category = filters.CharFilter(field_name="category", lookup_expr="iexact")
@@ -25,10 +25,10 @@ class GarmentSampleFilter(filters.FilterSet):
     buyer = filters.CharFilter(method="filter_by_buyer")
     project = filters.CharFilter(method="filter_by_project")
     letter_range_max = filters.CharFilter(
-        field_name="letter_range_max", lookup_expr="lte"
+        field_name="letter_range_max", lookup_expr="gte"
     )
     letter_range_min = filters.CharFilter(
-        field_name="letter_range_max", lookup_expr="gte"
+        field_name="letter_range_max", lookup_expr="lte"
     )
 
     class Meta:
