@@ -11,7 +11,7 @@ from common.serializers import (
 )
 from organizations.choices import CompanyUserRole
 from organizations.rest.serializers.users import UserSerializer
-from sample_manager.choices import ActionTypes, StorageType, WeightType,SizeRangeChoices
+from sample_manager.choices import ActionTypes, StorageType, WeightType
 from sample_manager.models import (
     Buyer,
     GarmentSample,
@@ -113,20 +113,6 @@ class SampleSerializer(serializers.ModelSerializer):
             "storage",
         ]
 
-    SIZE_ORDER = {
-        "XXS": 1,
-        "XS": 2,
-        "S": 3,
-        "M": 4,
-        "L": 5,
-        "XL": 6,
-        "XXL": 7,
-        "2XL": 7,
-        "3XL": 8,
-        "4XL": 9,
-        "5XL": 10,
-    }
-
     def get_images(self, obj):
         image_ids = SampleImage.objects.filter(sample=obj).values_list(
             "image_id", flat=True
@@ -199,7 +185,6 @@ class SampleSerializer(serializers.ModelSerializer):
         note_uids = validated_data.pop("note_uids", [])
         weight_type = validated_data.get("weight_type")
         weight = validated_data.get("weight")
-        size_range_type = validated_data.get("size_range_type")
 
         user = self.context["request"].user
         company = user.get_company()
@@ -210,16 +195,6 @@ class SampleSerializer(serializers.ModelSerializer):
 
         if weight_type == WeightType.KG and weight is not None:
             validated_data["weight"] = Decimal(weight * 1000)
-        if size_range_type == SizeRangeChoices.LETTER_RANGE:
-            print("ENtered")
-            validated_data.pop("letter_range_max")
-            validated_data.pop("letter_range_min")
-            validated_data["letter_range_max"] = self.SIZE_ORDER.get(
-                validated_data["letter_range_max"]
-            )
-            validated_data["letter_range_min"] = self.SIZE_ORDER.get(
-                validated_data["letter_range_min"]
-            )
 
         storage = Storage.objects.filter(
             uid=storage_uid, type=StorageType.SPACE
@@ -285,20 +260,9 @@ class SampleSerializer(serializers.ModelSerializer):
 
         weight_type = validated_data.get("weight_type")
         weight = validated_data.get("weight")
-        size_range_type = validated_data.get("size_range_type")
 
         if weight_type == WeightType.KG and weight is not None:
             validated_data["weight"] = Decimal(weight * 1000)
-
-        if size_range_type == SizeRangeChoices.LETTER_RANGE:
-            validated_data.pop("letter_range_max")
-            validated_data.pop("letter_range_min")
-            validated_data["letter_range_max"] = self.SIZE_ORDER.get(
-                validated_data["letter_range_max"]
-            )
-            validated_data["letter_range_min"] = self.SIZE_ORDER.get(
-                validated_data["letter_range_min"]
-            )
 
         user = self.context["request"].user
         company = user.get_company()
