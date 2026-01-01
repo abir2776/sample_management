@@ -84,8 +84,8 @@ class GarmentSample(BaseModelWithUID):
     size_range_type = models.CharField(
         max_length=20, choices=SizeRangeChoices.choices, default=SizeRangeChoices.LETTER_RANGE
     )
-    letter_range_max = models.CharField(null=True,blank=True,max_length=20)
-    letter_range_min = models.CharField(null=True,blank=True,max_length=20)
+    letter_range_max = models.IntegerField(null=True,blank=True)
+    letter_range_min = models.IntegerField(null=True,blank=True)
     age_range_year_max = models.IntegerField(null=True,blank=True)
     age_range_year_min = models.IntegerField(null=True,blank=True)
     age_range_month_max = models.IntegerField(null=True,blank=True)
