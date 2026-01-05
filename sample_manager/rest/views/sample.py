@@ -59,7 +59,7 @@ class SampleListCreateView(ListCreateAPIView):
             storage__uid=storage_uid,
             is_active=True,
             status=Status.ACTIVE,
-        )
+        ).order_by("name")
 
     def get_permissions(self):
         method = self.request.method
@@ -129,7 +129,7 @@ class SampleListView(ListAPIView):
             company=company,
             is_active=True,
             status=Status.ACTIVE,
-        )
+        ).order_by("name")
 
     def get_permissions(self):
         return [IsAuthenticated()]
@@ -457,7 +457,7 @@ class PublicSampleListView(ListAPIView):
     search_fields = ["name", "style_no", "sku_no", "fabrication"]
     ordering_fields = ["name", "arrival_date", "color"]
     ordering = ["created_at"]
-    queryset = GarmentSample.objects.filter()
+    queryset = GarmentSample.objects.filter().order_by("name")
 
 
 class PublicSampleSearchDetailView(RetrieveAPIView):

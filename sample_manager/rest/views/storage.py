@@ -39,12 +39,18 @@ class StorageListCreateView(ListCreateAPIView):
         role = request.user.get_role()
         base_queryset = Storage.objects.all()
         if role != CompanyUserRole.SUPER_ADMIN:
-            base_queryset = base_queryset.filter(company=company, status=Status.ACTIVE)
+            base_queryset = base_queryset.filter(
+                company=company, status=Status.ACTIVE
+            ).order_by("name")
         if search:
-            return base_queryset.filter(status=Status.ACTIVE)
+            return base_queryset.filter(status=Status.ACTIVE).order_by("name")
         if parent_uid:
-            return base_queryset.filter(parent__uid=parent_uid, status=Status.ACTIVE)
-        return base_queryset.filter(parent__isnull=True, status=Status.ACTIVE)
+            return base_queryset.filter(
+                parent__uid=parent_uid, status=Status.ACTIVE
+            ).order_by("name")
+        return base_queryset.filter(parent__isnull=True, status=Status.ACTIVE).order_by(
+            "name"
+        )
 
     def get_permissions(self):
         method = self.request.method
