@@ -172,10 +172,46 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 ALLOWED_HOSTS = ["*"]
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 APPEND_SLASH = False
 
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
+
+# CSRF Configuration for ngrok
 CSRF_TRUSTED_ORIGINS = [
-    "https://apis.venotel.com"
+    "https://apis.venotel.com",
+    "https://autogenetically-submediocre-keiko.ngrok-free.app",
+    "https://*.ngrok-free.app",  # Allow any ngrok domain
+    "https://*.ngrok.io",
+]
+
+# Security settings for development
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None 
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "autogenetically-submediocre-keiko.ngrok-free.dev",
+    ".ngrok-free.app",  # Add this for any ngrok domain
+    ".ngrok.io",  # Add this for older ngrok domains
 ]
 
 # Celery Configuration Options
