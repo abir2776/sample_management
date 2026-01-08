@@ -1,4 +1,5 @@
 from io import BytesIO
+import re
 
 import openpyxl
 from django.core.files.base import ContentFile
@@ -163,13 +164,20 @@ class GarmentSampleHistoryListView(ListAPIView):
 class SampleUploadView(APIView):
     permission_classes = [IsAuthenticated]
 
+    # Storage UID mappings
+    STORAGE_MAPPINGS = {
+        "KID": "2fe5bba3-2e2a-468c-a177-b545e86dcfc3",
+        "BOY": "6bd69d61-81d2-42ec-94b9-6085290fe8e0",
+        "LADIES": "37d00373-1966-4aae-9f99-9e4a1385cd3b",
+        "MEN": "e537c6d8-1d46-4d5a-8542-4beca0c7c017",
+    }
+
     def post(self, request):
         """
         Upload Excel file to import garment samples
 
         Request Body:
         - file: Excel file (.xlsx or .xls)
-        - storage_uid: Storage UID where samples will be stored
 
         Returns:
         - success: Boolean indicating overall success
@@ -181,32 +189,19 @@ class SampleUploadView(APIView):
         - unique_colors: List of unique colors found
         - error_details: List of error details (if any)
         """
-        serializer = SampleUploadSerializer(data=request.data)
+        if 'file' not in request.FILES:
+            return Response(
+                {"success": False, "message": "No file provided"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        uploaded_file = serializer.validated_data["file"]
-        storage_uid = serializer.validated_data["storage_uid"]
-
+        uploaded_file = request.FILES['file']
         user = request.user
         company = user.get_company()
 
-        # Validate storage exists
-        try:
-            storage = Storage.objects.get(uid=storage_uid, type=StorageType.SPACE)
-        except Storage.DoesNotExist:
-            return Response(
-                {
-                    "success": False,
-                    "message": f"Storage with UID {storage_uid} not found",
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
         # Process the Excel file
         try:
-            result = self.process_excel_file(uploaded_file, storage, user, company)
+            result = self.process_excel_file(uploaded_file, user, company)
 
             response_data = {
                 "success": result["errors"] == 0,
@@ -231,6 +226,102 @@ class SampleUploadView(APIView):
                 {"success": False, "message": f"Error processing file: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+    def determine_storage_uid(self, sample_name, sub_category):
+        """
+        Determine storage UID based on sample name or sub-category
+        
+        Args:
+            sample_name: Name of the sample
+            sub_category: Sub-category value
+            
+        Returns:
+            Storage UID string
+        """
+        search_text = f"{sample_name or ''} {sub_category or ''}".upper()
+        
+        # Check for keywords in order of priority
+        if "KID" in search_text or "CHILD" in search_text:
+            return self.STORAGE_MAPPINGS["KID"]
+        elif "BOY" in search_text or "BOYS" in search_text:
+            return self.STORAGE_MAPPINGS["BOY"]
+        elif "LADIES" in search_text or "LADY" in search_text or "WOMEN" in search_text or "FEMALE" in search_text:
+            return self.STORAGE_MAPPINGS["LADIES"]
+        elif "MEN" in search_text or "MALE" in search_text or "MENS" in search_text:
+            return self.STORAGE_MAPPINGS["MEN"]
+        
+        # Default to MEN if no match found
+        return self.STORAGE_MAPPINGS["MEN"]
+
+    def parse_size_range(self, size_range_str):
+        """
+        Parse size range string and determine type and min/max values
+        
+        Args:
+            size_range_str: Size range string (e.g., "XS-XXL", "4-10 Y", "6-12 M")
+            
+        Returns:
+            Dictionary with size_range_type and min/max values
+        """
+        if not size_range_str:
+            return {
+                "size_range_type": "LETTER_RANGE",
+                "letter_range_min": None,
+                "letter_range_max": None,
+            }
+        
+        size_range_str = str(size_range_str).strip().upper()
+        
+        # Check for age range with year indicator (Y)
+        year_pattern = r'(\d+)\s*-\s*(\d+)\s*Y'
+        year_match = re.search(year_pattern, size_range_str)
+        if year_match:
+            min_val = int(year_match.group(1))
+            max_val = int(year_match.group(2))
+            return {
+                "size_range_type": "AGE_RANGE_YEAR",
+                "age_range_year_min": min_val,
+                "age_range_year_max": max_val,
+            }
+        
+        # Check for age range with month indicator (M)
+        month_pattern = r'(\d+)\s*-\s*(\d+)\s*M'
+        month_match = re.search(month_pattern, size_range_str)
+        if month_match:
+            min_val = int(month_match.group(1))
+            max_val = int(month_match.group(2))
+            return {
+                "size_range_type": "AGE_RANGE_MONTH",
+                "age_range_month_min": min_val,
+                "age_range_month_max": max_val,
+            }
+        
+        # Check for letter range (XS, S, M, L, XL, XXL, XXXL, etc.)
+        letter_sizes = ["XS", "S", "M", "L", "XL", "XXL", "XXXL", "XXXXL"]
+        size_mapping = {size: idx for idx, size in enumerate(letter_sizes)}
+        
+        # Try to find letter range pattern
+        letter_pattern = r'([X]*[SML]X*)\s*-\s*([X]*[SML]X*)'
+        letter_match = re.search(letter_pattern, size_range_str)
+        if letter_match:
+            min_size = letter_match.group(1)
+            max_size = letter_match.group(2)
+            
+            min_val = size_mapping.get(min_size, 0)
+            max_val = size_mapping.get(max_size, 0)
+            
+            return {
+                "size_range_type": "LETTER_RANGE",
+                "letter_range_min": min_val,
+                "letter_range_max": max_val,
+            }
+        
+        # Default to letter range if no pattern matched
+        return {
+            "size_range_type": "LETTER_RANGE",
+            "letter_range_min": None,
+            "letter_range_max": None,
+        }
 
     def normalize_category_value(self, value, choices_class):
         """
@@ -263,7 +354,7 @@ class SampleUploadView(APIView):
 
         return None
 
-    def process_excel_file(self, file, storage, user, company):
+    def process_excel_file(self, file, user, company):
         """Process uploaded Excel file and create samples"""
         created_count = 0
         skipped_count = 0
@@ -343,6 +434,23 @@ class SampleUploadView(APIView):
                         sub_category, SubCategoryChoices
                     )
 
+                    # Determine storage UID based on name or sub-category
+                    storage_uid = self.determine_storage_uid(name, sub_category_value)
+                    
+                    # Validate storage exists
+                    try:
+                        storage = Storage.objects.get(uid=storage_uid, type=StorageType.SPACE)
+                    except Storage.DoesNotExist:
+                        error_count += 1
+                        error_details.append(
+                            {
+                                "row": row_num,
+                                "sample_id": str(sample_id),
+                                "error": f"Storage with UID {storage_uid} not found",
+                            }
+                        )
+                        continue
+
                     # Check if sample already exists
                     if GarmentSample.objects.filter(
                         sample_id=sample_id, company=company
@@ -357,24 +465,40 @@ class SampleUploadView(APIView):
                         )
                         continue
 
-                    # Create sample
-                    sample = GarmentSample.objects.create(
-                        storage=storage,
-                        sample_id=str(sample_id) if sample_id else "",
-                        created_by=user,
-                        company=company,
-                        style_no=str(style_no) if style_no else "",
-                        name=str(name) if name else "",
-                        fabrication=str(fabrication) if fabrication else "",
-                        color=color_str,
-                        size_range=str(size_range) if size_range else "",
-                        category=category_value,
-                        sub_category=sub_category_value,
-                        status=SampleStatus.ACTIVE,
-                        is_active=True,
-                        weight_type="GSM",
-                        weight=gsm_value,
-                    )
+                    # Parse size range
+                    size_range_data = self.parse_size_range(size_range)
+
+                    # Create sample with size range data
+                    sample_data = {
+                        "storage": storage,
+                        "sample_id": str(sample_id) if sample_id else "",
+                        "created_by": user,
+                        "company": company,
+                        "style_no": str(style_no) if style_no else "",
+                        "name": str(name) if name else "",
+                        "fabrication": str(fabrication) if fabrication else "",
+                        "color": color_str,
+                        "size_range_type": size_range_data["size_range_type"],
+                        "category": category_value,
+                        "sub_category": sub_category_value,
+                        "status": SampleStatus.ACTIVE,
+                        "is_active": True,
+                        "weight_type": "GSM",
+                        "weight": gsm_value,
+                    }
+
+                    # Add size range specific fields
+                    if size_range_data["size_range_type"] == "LETTER_RANGE":
+                        sample_data["letter_range_min"] = size_range_data.get("letter_range_min")
+                        sample_data["letter_range_max"] = size_range_data.get("letter_range_max")
+                    elif size_range_data["size_range_type"] == "AGE_RANGE_YEAR":
+                        sample_data["age_range_year_min"] = size_range_data.get("age_range_year_min")
+                        sample_data["age_range_year_max"] = size_range_data.get("age_range_year_max")
+                    elif size_range_data["size_range_type"] == "AGE_RANGE_MONTH":
+                        sample_data["age_range_month_min"] = size_range_data.get("age_range_month_min")
+                        sample_data["age_range_month_max"] = size_range_data.get("age_range_month_max")
+
+                    sample = GarmentSample.objects.create(**sample_data)
 
                     # Handle image from Excel
                     picture_cell = f"C{row_num}"
