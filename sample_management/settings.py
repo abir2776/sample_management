@@ -175,13 +175,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 APPEND_SLASH = False
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://apis.venotel.com",
-    "https://autogenetically-submediocre-keiko.ngrok-free.dev"
-]
-ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-    "autogenetically-submediocre-keiko.ngrok-free.dev",
+    "https://apis.venotel.com"
 ]
 
 # Celery Configuration Options
