@@ -205,12 +205,12 @@ if True:
         "127.0.0.1",
         ".ngrok-free.app",
         ".ngrok.io",
-        "autogenetically-submediocre-keiko.ngrok-free.app",
+        "autogenetically-submediocre-keiko.ngrok-free.dev",
         "185.208.206.205"
     ]
 
     CSRF_TRUSTED_ORIGINS = [
-        "https://autogenetically-submediocre-keiko.ngrok-free.app",
+        "https://autogenetically-submediocre-keiko.ngrok-free.dev",
         "https://*.ngrok-free.app",
         "https://*.ngrok.io",
     ]
