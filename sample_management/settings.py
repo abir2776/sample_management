@@ -178,43 +178,6 @@ CSRF_TRUSTED_ORIGINS = [
     "https://apis.venotel.com",
 ]
 
-if True:
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    USE_X_FORWARDED_HOST = True
-    SECURE_SSL_REDIRECT = False  # Important for ngrok
-
-    # CORS settings
-    CORS_ALLOW_ALL_ORIGINS = True  # For development
-    CORS_ALLOW_CREDENTIALS = True
-    CORS_ALLOW_HEADERS = [
-        "accept",
-        "accept-encoding",
-        "authorization",
-        "content-type",
-        "dnt",
-        "origin",
-        "user-agent",
-        "x-csrftoken",
-        "x-requested-with",
-        "ngrok-skip-browser-warning",  # Add this
-    ]
-
-    # Make sure these match your ngrok URL
-    ALLOWED_HOSTS = [
-        "localhost",
-        "127.0.0.1",
-        ".ngrok-free.app",
-        ".ngrok.io",
-        "autogenetically-submediocre-keiko.ngrok-free.dev",
-        "185.208.206.205"
-    ]
-
-    CSRF_TRUSTED_ORIGINS = [
-        "https://autogenetically-submediocre-keiko.ngrok-free.dev",
-        "https://*.ngrok-free.app",
-        "https://*.ngrok.io",
-    ]
-
 # Celery Configuration Options
 CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
 CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/0"
